@@ -1,0 +1,57 @@
+FROM dunglas/frankenphp:1-php8.3
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    libzip-dev \
+    libpq-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-install pdo pdo_pgsql zip gd pcntl
+
+# Install Redis extension via PECL
+RUN pecl install redis && docker-php-ext-enable redis
+
+# Set working directory
+WORKDIR /app
+
+# Copy application files
+COPY . .
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Install Composer dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Install Node.js dependencies and build assets
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && npm ci \
+    && npm run build \
+    && rm -rf node_modules
+
+# Create necessary directories and set permissions
+RUN mkdir -p /var/log/caddy \
+    && chmod 755 /app \
+    && chmod 755 /var/log/caddy
+
+# Configure FrankenPHP for production
+ENV FRANKENPHP_CONFIG="worker:32 scheduler:2"
+ENV QUEUE_CONNECTION=redis
+ENV REDIS_HOST=redis
+ENV REDIS_PORT=6379
+
+# Expose port 80
+EXPOSE 80
+
+# Copy Caddyfile
+COPY docker/frankenphp/Caddyfile /etc/caddy/Caddyfile
+
+# Start FrankenPHP
+CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]

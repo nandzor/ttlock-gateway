@@ -1,0 +1,199 @@
+{
+  "info": {
+    "name": "HPS Dashboard API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "7a7c2f1f-3b7e-4a3f-9e8b-3e9f1b2c0abc"
+  },
+  "item": [
+    {
+      "name": "HPS Elektronik",
+      "item": [
+        {
+          "name": "Check Price (Grade & Harga)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-token", "value": "{{x-token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/hps-elektronik/check-price",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "hps-elektronik", "check-price"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jenis_barang\": \"handphone\",\n  \"merek\": \"samsung\",\n  \"nama_barang\": \"galaxy s23\",\n  \"kelengkapan\": \"fullset like new\"\n}"
+            },
+            "description": "Mengembalikan grade dan harga berdasarkan jenis_barang, merek, nama_barang, dan kelengkapan."
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-token", "value": "{{x-token}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/hps-elektronik/check-price",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "hps-elektronik", "check-price"]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"jenis_barang\": \"handphone\",\n  \"merek\": \"samsung\",\n  \"nama_barang\": \"galaxy s23\",\n  \"kelengkapan\": \"fullset like new\"\n}"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Data harga berhasil ditemukan\",\n  \"data\": {\n    \"request\": {\n      \"jenis_barang\": \"handphone\",\n      \"merek\": \"samsung\",\n      \"nama_barang\": \"galaxy s23\",\n      \"kelengkapan\": \"fullset like new\"\n    },\n    \"results\": [\n      {\n        \"id\": 123,\n        \"jenis_barang\": \"Handphone\",\n        \"merek\": \"Samsung\",\n        \"barang\": \"Galaxy S23 8/128GB\",\n        \"tahun\": 2023,\n        \"grade\": \"A\",\n        \"kondisi\": \"Fullset Like New\",\n        \"harga\": 5780000,\n        \"harga_formatted\": \"Rp 5.8jt\",\n        \"match_score\": 100\n      }\n    ],\n    \"best_match\": {\n      \"id\": 123,\n      \"jenis_barang\": \"Handphone\",\n      \"merek\": \"Samsung\",\n      \"barang\": \"Galaxy S23 8/128GB\",\n      \"tahun\": 2023,\n      \"grade\": \"A\",\n      \"kondisi\": \"Fullset Like New\",\n      \"harga\": 5780000,\n      \"harga_formatted\": \"Rp 5.8jt\",\n      \"match_score\": 100\n    }\n  }\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-token", "value": "{{x-token}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/hps-elektronik/check-price",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "hps-elektronik", "check-price"]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"jenis_barang\": \"handphone\",\n  \"merek\": \"nonexistent\",\n  \"nama_barang\": \"xxx\",\n  \"kelengkapan\": \"unit only\"\n}"
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Tidak ditemukan data yang sesuai\",\n  \"error\": {\n    \"code\": \"NOT_FOUND\"\n  },\n  \"meta\": {\n    \"timestamp\": \"...\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "HPS Emas",
+      "item": [
+        {
+          "name": "Check Price (Harga per Gram & Total)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-token", "value": "{{x-token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/hps-emas/check-price",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "hps-emas", "check-price"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jenis_barang\": \"perhiasan\",\n  \"karat\": 24,\n  \"berat\": 5.5\n}"
+            },
+            "description": "Mengembalikan harga emas per gram dan total harga berdasarkan jenis_barang, karat, dan berat yang diminta."
+          },
+          "response": [
+            {
+              "name": "200 Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-token", "value": "{{x-token}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/hps-emas/check-price",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "hps-emas", "check-price"]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"jenis_barang\": \"perhiasan\",\n  \"karat\": 24,\n  \"berat\": 5.5\n}"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Data harga emas berhasil ditemukan\",\n  \"data\": {\n    \"request\": {\n      \"jenis_barang\": \"perhiasan\",\n      \"karat\": 24,\n      \"berat\": 5.5\n    },\n    \"results\": [\n      {\n        \"id\": 4,\n        \"jenis_barang\": \"Perhiasan\",\n        \"kadar_karat\": 24,\n        \"berat_gram\": \"1.00\",\n        \"ltv\": \"98.00\",\n        \"harga_per_gram\": \"1765000.00\",\n        \"harga_per_gram_formatted\": \"Rp 1.8jt\",\n        \"nilai_taksiran_per_gram\": \"1765000.00\",\n        \"nilai_taksiran_per_gram_formatted\": \"Rp 1.8jt\",\n        \"uang_pinjaman_per_gram\": \"1729700.00\",\n        \"uang_pinjaman_per_gram_formatted\": \"Rp 1.7jt\",\n        \"berat_diminta\": 5.5,\n        \"total_harga\": 9707500,\n        \"total_harga_formatted\": \"Rp 9.7jt\",\n        \"total_nilai_taksiran\": 9707500,\n        \"total_nilai_taksiran_formatted\": \"Rp 9.7jt\",\n        \"total_uang_pinjaman\": 9513350,\n        \"total_uang_pinjaman_formatted\": \"Rp 9.5jt\",\n        \"match_score\": 91.82\n      }\n    ],\n    \"best_match\": {\n      \"id\": 4,\n      \"jenis_barang\": \"Perhiasan\",\n      \"kadar_karat\": 24,\n      \"berat_gram\": \"1.00\",\n      \"ltv\": \"98.00\",\n      \"harga_per_gram\": \"1765000.00\",\n      \"harga_per_gram_formatted\": \"Rp 1.8jt\",\n      \"nilai_taksiran_per_gram\": \"1765000.00\",\n      \"nilai_taksiran_per_gram_formatted\": \"Rp 1.8jt\",\n      \"uang_pinjaman_per_gram\": \"1729700.00\",\n      \"uang_pinjaman_per_gram_formatted\": \"Rp 1.7jt\",\n      \"berat_diminta\": 5.5,\n      \"total_harga\": 9707500,\n      \"total_harga_formatted\": \"Rp 9.7jt\",\n      \"total_nilai_taksiran\": 9707500,\n      \"total_nilai_taksiran_formatted\": \"Rp 9.7jt\",\n      \"total_uang_pinjaman\": 9513350,\n      \"total_uang_pinjaman_formatted\": \"Rp 9.5jt\",\n      \"match_score\": 91.82\n    },\n    \"price_summary\": {\n      \"berat_diminta\": 5.5,\n      \"jumlah_data\": 1,\n      \"harga_range\": {\n        \"min\": 9707500,\n        \"max\": 9707500,\n        \"min_formatted\": \"Rp 9.7jt\",\n        \"max_formatted\": \"Rp 9.7jt\",\n        \"rata_rata\": 9707500,\n        \"rata_rata_formatted\": \"Rp 9.7jt\"\n      },\n      \"nilai_taksiran_range\": {\n        \"min\": 9707500,\n        \"max\": 9707500,\n        \"min_formatted\": \"Rp 9.7jt\",\n        \"max_formatted\": \"Rp 9.7jt\",\n        \"rata_rata\": 9707500,\n        \"rata_rata_formatted\": \"Rp 9.7jt\"\n      },\n      \"uang_pinjaman_range\": {\n        \"min\": 9513350,\n        \"max\": 9513350,\n        \"min_formatted\": \"Rp 9.5jt\",\n        \"max_formatted\": \"Rp 9.5jt\",\n        \"rata_rata\": 9513350,\n        \"rata_rata_formatted\": \"Rp 9.5jt\"\n      }\n    }\n  },\n  \"meta\": {\n    \"timestamp\": \"2025-10-21T09:54:46+07:00\",\n    \"version\": \"1.0\",\n    \"request_id\": \"106c1b53-4196-4f84-9ed4-41285ec564f0\"\n  }\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-token", "value": "{{x-token}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/hps-emas/check-price",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "hps-emas", "check-price"]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"jenis_barang\": \"nonexistent\",\n  \"karat\": 99,\n  \"berat\": 1.0\n}"
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Tidak ditemukan data emas yang sesuai dengan kriteria\",\n  \"error\": {\n    \"code\": \"NOT_FOUND\"\n  },\n  \"meta\": {\n    \"timestamp\": \"...\"\n  }\n}"
+            },
+            {
+              "name": "422 Validation Error",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "x-token", "value": "{{x-token}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/hps-emas/check-price",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "hps-emas", "check-price"]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"jenis_barang\": \"perhiasan\",\n  \"karat\": 30,\n  \"berat\": -1\n}"
+                }
+              },
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"errors\": {\n    \"karat\": [\"The karat field must not be greater than 24.\"],\n    \"berat\": [\"The berat field must be at least 0.01.\"]\n  },\n  \"meta\": {\n    \"timestamp\": \"...\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "{{baseUrl}}" },
+    { "key": "x-token", "value": "{{x-token}}" }
+  ]
+}
+
+

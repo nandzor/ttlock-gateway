@@ -1,0 +1,30 @@
+{
+    auto_https off
+    admin off
+    frankenphp {
+        num_threads 16
+    }
+}
+
+:80 {
+    root * /app/public
+    encode gzip
+
+    # Health check endpoint
+    handle /health {
+        respond "OK" 200
+    }
+
+    # FrankenPHP metrics endpoint
+    handle /metrics {
+        metrics
+    }
+
+    # Queue status endpoint
+    handle /queue-status {
+        php_server
+    }
+
+    # Main application
+    php_server
+}
