@@ -35,7 +35,7 @@
             <td>{{ $h->created_at->format('Y-m-d H:i:s') }}</td>
             <td>{{ $h->lock_id }} ({{ $h->lock_mac }})</td>
             <td>{{ $h->event_type_description }} - {{ $h->message }}</td>
-            <td>{{ $h->record_type }}</td>
+            <td>{{ $h->record_type_description }}</td>
             <td>{{ $h->electric_quantity }}% ({{ $h->battery_level_description }})</td>
             <td>{{ $h->username ?? '-' }}</td>
           </tr>

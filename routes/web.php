@@ -35,6 +35,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/ttlock-callback-histories', [TTLockCallbackHistoryController::class, 'index'])->name('ttlock.callback.histories.index');
     Route::get('/ttlock-callback-histories/export/{format}', [TTLockCallbackHistoryController::class, 'export'])->name('ttlock.callback.histories.export');
 
-
     // Removed routes for modules that are no longer present
 });
+

@@ -65,6 +65,10 @@ class BaseExportService {
         }
 
         // Default: Excel
+        // If exportClass is a string (class name), instantiate it with data
+        if (is_string($exportClass)) {
+            $exportClass = new $exportClass($data);
+        }
         return $this->exportToExcel($exportClass, $fileName);
     }
 
