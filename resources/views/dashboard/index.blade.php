@@ -117,7 +117,7 @@
             </div>
           </div>
           
-          <div id="locks-container" class="space-y-2 max-h-96 overflow-y-auto">
+          <div id="locks-container" class="max-h-96 overflow-y-auto border border-gray-200 rounded-lg bg-white divide-y divide-gray-100">
             @if($selectedGatewayId && count($gatewayLocks) > 0)
               @foreach($gatewayLocks as $lock)
                 @include('dashboard.partials.lock-item', ['lock' => $lock])
@@ -346,26 +346,34 @@
       const rssiData = this.calculateRssiStatus(lock.rssi);
       const updateDateStr = this.formatUpdateDate(lock.updateDate);
       
+      const signalHtml = lock.rssi !== null && lock.rssi !== undefined 
+        ? `<span class="text-gray-300">•</span><span class="font-medium text-${rssiData.color}-600">${lock.rssi} dBm</span>`
+        : '';
+      
+      const updateHtml = updateDateStr 
+        ? `<span class="text-gray-300">•</span><span class="text-gray-400">${updateDateStr}</span>`
+        : '';
+      
       return `
-        <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
-          <div class="flex items-center justify-between">
-            <div class="flex-1">
-              ${hasAlias ? `
-                <h5 class="font-medium text-gray-900">${lock.lockAlias}</h5>
-                <p class="text-xs text-gray-500 italic">${lock.lockName || 'Unknown Lock'}</p>
-              ` : `
-                <h5 class="font-medium text-gray-900">${lock.lockName || 'Unknown Lock'}</h5>
-              `}
-              <p class="text-xs text-gray-500 mt-1">
-                ID: ${lock.lockId || 'Unknown'} | MAC: ${lock.lockMac || 'Unknown'}
-              </p>
-              ${lock.rssi !== null && lock.rssi !== undefined ? `
-                <p class="text-xs text-gray-500 mt-1">
-                  Signal: <span class="font-medium text-${rssiData.color}-600">${lock.rssi} dBm</span> 
-                  <span class="text-${rssiData.color}-600">(${rssiData.status.charAt(0).toUpperCase() + rssiData.status.slice(1)})</span>
-                </p>
-              ` : ''}
-              ${updateDateStr ? `<p class="text-xs text-gray-500 mt-1">Last update: ${updateDateStr}</p>` : ''}
+        <div class="px-3 py-2 bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors last:border-b-0">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                ${hasAlias ? `
+                  <h5 class="font-semibold text-sm text-gray-900 truncate">${lock.lockAlias}</h5>
+                  <span class="text-xs text-gray-400 italic flex-shrink-0">${lock.lockName || 'Unknown'}</span>
+                ` : `
+                  <h5 class="font-semibold text-sm text-gray-900 truncate">${lock.lockName || 'Unknown Lock'}</h5>
+                `}
+              </div>
+              
+              <div class="flex items-center gap-2 text-xs text-gray-500">
+                <span class="font-mono text-gray-600">${lock.lockId || 'Unknown'}</span>
+                <span class="text-gray-300">•</span>
+                <span class="font-mono">${lock.lockMac || 'Unknown'}</span>
+                ${signalHtml}
+                ${updateHtml}
+              </div>
             </div>
           </div>
         </div>

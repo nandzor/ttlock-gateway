@@ -21,30 +21,33 @@
   $hasAlias = isset($lock['lockAlias']) && $lock['lockAlias'] != $lock['lockName'];
 @endphp
 
-<div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
-  <div class="flex items-center justify-between">
-    <div class="flex-1">
-      @if($hasAlias)
-        <h5 class="font-medium text-gray-900">{{ $lock['lockAlias'] }}</h5>
-        <p class="text-xs text-gray-500 italic">{{ $lock['lockName'] ?? 'Unknown Lock' }}</p>
-      @else
-        <h5 class="font-medium text-gray-900">{{ $lock['lockName'] ?? 'Unknown Lock' }}</h5>
-      @endif
+<div class="px-3 py-2 bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors last:border-b-0">
+  <div class="flex items-center justify-between gap-3">
+    <div class="flex-1 min-w-0">
+      <!-- Baris 1: Lock Name -->
+      <div class="flex items-center gap-2 mb-1">
+        @if($hasAlias)
+          <h5 class="font-semibold text-sm text-gray-900 truncate">{{ $lock['lockAlias'] }}</h5>
+          <span class="text-xs text-gray-400 italic flex-shrink-0">{{ $lock['lockName'] ?? 'Unknown' }}</span>
+        @else
+          <h5 class="font-semibold text-sm text-gray-900 truncate">{{ $lock['lockName'] ?? 'Unknown Lock' }}</h5>
+        @endif
+      </div>
       
-      <p class="text-xs text-gray-500 mt-1">
-        ID: {{ $lock['lockId'] ?? 'Unknown' }} | MAC: {{ $lock['lockMac'] ?? 'Unknown' }}
-      </p>
-      
-      @if($rssi !== null)
-        <p class="text-xs text-gray-500 mt-1">
-          Signal: <span class="font-medium text-{{ $rssiColor }}-600">{{ $rssi }} dBm</span> 
-          <span class="text-{{ $rssiColor }}-600">({{ ucfirst($rssiStatus) }})</span>
-        </p>
-      @endif
-      
-      @if($updateDate)
-        <p class="text-xs text-gray-500 mt-1">Last update: {{ $updateDate->diffForHumans() }}</p>
-      @endif
+      <!-- Baris 2: Details -->
+      <div class="flex items-center gap-2 text-xs text-gray-500">
+        <span class="font-mono text-gray-600">{{ $lock['lockId'] ?? 'Unknown' }}</span>
+        <span class="text-gray-300">•</span>
+        <span class="font-mono">{{ $lock['lockMac'] ?? 'Unknown' }}</span>
+        @if($rssi !== null)
+          <span class="text-gray-300">•</span>
+          <span class="font-medium text-{{ $rssiColor }}-600">{{ $rssi }} dBm</span>
+        @endif
+        @if($updateDate)
+          <span class="text-gray-300">•</span>
+          <span class="text-gray-400">{{ $updateDate->diffForHumans() }}</span>
+        @endif
+      </div>
     </div>
   </div>
 </div>
