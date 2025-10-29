@@ -29,26 +29,87 @@
     </div>
 
     <!-- TTLock Status Indicators -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="mb-8">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">TTLock System Status</h2>
+      
       <!-- Gateway Status -->
-      <x-status-indicator
-        title="Gateway Status"
-        :status="$gatewayStatus['success'] ? $gatewayStatus['data']['status'] : 'offline'"
-        :count="$gatewayStatus['success'] ? $gatewayStatus['data']['online_gateways'] : 0"
-        :total="$gatewayStatus['success'] ? $gatewayStatus['data']['total_gateways'] : 0"
-        icon="wifi"
-        :lastSeen="$gatewayStatus['success'] ? now()->toISOString() : null"
-      />
-
-      <!-- Smart Door Lock Status -->
-      <x-status-indicator
-        title="Smart Door Lock"
-        :status="$lockStatus['success'] ? $lockStatus['data']['status'] : 'offline'"
-        :count="$lockStatus['success'] && $lockStatus['data']['is_online'] ? 1 : 0"
-        :total="1"
-        icon="lock"
-        :lastSeen="$lockStatus['success'] ? $lockStatus['data']['last_seen'] : null"
-      />
+      <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">Gateway Status</h3>
+          <div class="flex items-center space-x-2">
+            @if($gatewayStatus['success'] && $gatewayStatus['data']['status'] === 'online')
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <span class="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
+                Online
+              </span>
+            @else
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                <span class="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
+                Offline
+              </span>
+            @endif
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">{{ $gatewayStatus['success'] ? $gatewayStatus['data']['total_gateways'] : 0 }}</div>
+            <div class="text-sm text-gray-500">Total Gateways</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-green-600">{{ $gatewayStatus['success'] ? $gatewayStatus['data']['online_gateways'] : 0 }}</div>
+            <div class="text-sm text-gray-500">Online</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-red-600">{{ $gatewayStatus['success'] ? $gatewayStatus['data']['offline_gateways'] : 0 }}</div>
+            <div class="text-sm text-gray-500">Offline</div>
+          </div>
+        </div>
+        
+        @if($gatewayStatus['success'])
+          <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+            <p class="text-sm text-gray-600">
+              <strong>Status:</strong> {{ $gatewayStatus['data']['reason'] }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              Last checked: {{ \Carbon\Carbon::parse($gatewayStatus['data']['last_check'])->diffForHumans() }}
+            </p>
+          </div>
+          
+          @if(isset($gatewayStatus['data']['gateways']) && count($gatewayStatus['data']['gateways']) > 0)
+            <div class="mt-4">
+              <h4 class="text-sm font-medium text-gray-900 mb-2">Gateway Details:</h4>
+              <div class="space-y-2">
+                @foreach($gatewayStatus['data']['gateways'] as $gateway)
+                  <div class="p-3 bg-white rounded-lg border border-gray-200">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <h5 class="font-medium text-gray-900">{{ $gateway['gateway_name'] }}</h5>
+                        <p class="text-xs text-gray-500">ID: {{ $gateway['gateway_id'] }} | MAC: {{ $gateway['gateway_mac'] }}</p>
+                      </div>
+                      <div class="text-right">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $gateway['is_online'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                          {{ $gateway['status'] }}
+                        </span>
+                        <p class="text-xs text-gray-500 mt-1">{{ $gateway['lock_count'] }} locks</p>
+                      </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-600">
+                      <p>Version: {{ $gateway['gateway_version'] }} | Network: {{ $gateway['network_name'] }}</p>
+                    </div>
+                  </div>
+                @endforeach
+              </div>
+            </div>
+          @else
+            <div class="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+              <p class="text-sm text-yellow-800">
+                <strong>No gateways found.</strong> Please ensure your TTLock gateways are properly configured and connected to your account.
+              </p>
+            </div>
+          @endif
+        @endif
+      </div>
     </div>
 
     <!-- Stats Grid -->
