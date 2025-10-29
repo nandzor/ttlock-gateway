@@ -116,6 +116,9 @@
             <x-input name="date_from" label="From" type="date" value="{{ request('date_from') }}" />
             <x-input name="date_to" label="To" type="date" value="{{ request('date_to') }}" />
           </div>
+          <div class="flex items-end">
+            <x-button type="submit" color="blue">Apply Filters</x-button>
+          </div>
         </div>
       </form>
     </div>

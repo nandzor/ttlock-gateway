@@ -117,11 +117,13 @@ abstract class BaseService
             if (!is_null($value) && $value !== '') {
                 // Special handling for common filter types
                 if ($field === 'date_from') {
-                    $query->where('created_at', '>=', $value);
+                    $start = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $value) ? ($value . ' 00:00:00') : $value;
+                    $query->where('created_at', '>=', $start);
                     continue;
                 }
                 if ($field === 'date_to') {
-                    $query->where('created_at', '<=', $value);
+                    $end = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $value) ? ($value . ' 23:59:59') : $value;
+                    $query->where('created_at', '<=', $end);
                     continue;
                 }
                 if ($field === 'processed') {
