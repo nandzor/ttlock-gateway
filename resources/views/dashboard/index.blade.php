@@ -34,101 +34,144 @@
       
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Card 1: Gateway Status -->
-        <div class="bg-white rounded-xl shadow-lg p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Gateway Status</h3>
-            <div class="flex items-center space-x-2">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+          <!-- Header -->
+          <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-gray-900">Gateway Status</h3>
               @php
                 $isOnline = $gatewayStatus['success'] && ($gatewayStatus['data']['status'] ?? 'offline') === 'online';
+                $gatewayStats = $gatewayStatus['success'] ? $gatewayStatus['data'] : [];
+                $totalGateways = $gatewayStats['total_gateways'] ?? 0;
+                $onlineGateways = $gatewayStats['online_gateways'] ?? 0;
+                $offlineGateways = $gatewayStats['offline_gateways'] ?? 0;
               @endphp
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $isOnline ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                <span class="w-2 h-2 {{ $isOnline ? 'bg-green-500' : 'bg-red-500' }} rounded-full mr-1 {{ $isOnline ? 'animate-pulse' : '' }}"></span>
-                {{ $isOnline ? 'Online' : 'Offline' }}
-              </span>
+              <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs text-gray-500">Total:</span>
+                    <span class="text-sm font-semibold text-gray-900">{{ $totalGateways }}</span>
+                  </div>
+                  <span class="text-gray-300">•</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs text-gray-500">Online:</span>
+                    <span class="text-sm font-semibold text-green-600">{{ $onlineGateways }}</span>
+                  </div>
+                  <span class="text-gray-300">•</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs text-gray-500">Offline:</span>
+                    <span class="text-sm font-semibold text-red-600">{{ $offlineGateways }}</span>
+                  </div>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium {{ $isOnline ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                  <span class="w-2 h-2 {{ $isOnline ? 'bg-green-500' : 'bg-red-500' }} rounded-full mr-1.5 {{ $isOnline ? 'animate-pulse' : '' }}"></span>
+                  {{ $isOnline ? 'Online' : 'Offline' }}
+                </span>
+              </div>
             </div>
           </div>
           
-          @php
-            $gatewayStats = $gatewayStatus['success'] ? $gatewayStatus['data'] : [];
-            $totalGateways = $gatewayStats['total_gateways'] ?? 0;
-            $onlineGateways = $gatewayStats['online_gateways'] ?? 0;
-            $offlineGateways = $gatewayStats['offline_gateways'] ?? 0;
-          @endphp
-          
-          <div class="grid grid-cols-3 gap-4 mb-4">
-            <div class="text-center">
-              <div class="text-2xl font-bold text-gray-900">{{ $totalGateways }}</div>
-              <div class="text-sm text-gray-500">Total</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold text-green-600">{{ $onlineGateways }}</div>
-              <div class="text-sm text-gray-500">Online</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold text-red-600">{{ $offlineGateways }}</div>
-              <div class="text-sm text-gray-500">Offline</div>
-            </div>
-          </div>
-          
+          <!-- Gateway List -->
           @if($gatewayStatus['success'] && isset($gatewayStatus['data']['gateways']) && count($gatewayStatus['data']['gateways']) > 0)
-            <div class="space-y-2 max-h-96 overflow-y-auto">
+            <div class="divide-y divide-gray-100 max-h-96 overflow-y-auto">
               @foreach($gatewayStatus['data']['gateways'] as $index => $gateway)
                 <div 
-                  class="p-3 rounded-lg border-2 cursor-pointer transition-all gateway-item {{ $selectedGatewayId == $gateway['gateway_id'] ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50' }}"
+                  class="px-4 py-3 cursor-pointer transition-all gateway-item {{ $selectedGatewayId == $gateway['gateway_id'] ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50' }}"
                   data-gateway-id="{{ $gateway['gateway_id'] }}"
                   onclick="selectGateway({{ $gateway['gateway_id'] }}, '{{ addslashes($gateway['gateway_name']) }}')"
                 >
-                  <div class="flex items-center justify-between">
-                    <div class="flex-1">
-                      <h5 class="font-medium text-gray-900">{{ $gateway['gateway_name'] }}</h5>
-                      <p class="text-xs text-gray-500 mt-1">ID: {{ $gateway['gateway_id'] }} | MAC: {{ $gateway['gateway_mac'] }}</p>
-                      <p class="text-xs text-gray-500">Version: {{ $gateway['gateway_version'] }} | Network: {{ $gateway['network_name'] }}</p>
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                      <!-- Baris 1: Gateway Name -->
+                      <div class="flex items-center gap-2 mb-1.5">
+                        <h5 class="font-semibold text-sm text-gray-900 truncate">{{ $gateway['gateway_name'] }}</h5>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $gateway['is_online'] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                          <span class="w-1.5 h-1.5 {{ $gateway['is_online'] ? 'bg-green-500' : 'bg-red-500' }} rounded-full mr-1"></span>
+                          {{ $gateway['status'] }}
+                        </span>
+                      </div>
+                      
+                      <!-- Baris 2: Details -->
+                      <div class="flex items-center gap-2 text-xs text-gray-500">
+                        <span class="font-mono text-gray-600">{{ $gateway['gateway_id'] }}</span>
+                        <span class="text-gray-300">•</span>
+                        <span class="font-mono">{{ $gateway['gateway_mac'] }}</span>
+                        <span class="text-gray-300">•</span>
+                        <span>v{{ $gateway['gateway_version'] }}</span>
+                        <span class="text-gray-300">•</span>
+                        <span class="flex items-center gap-1 truncate">
+                          <svg class="w-3 h-3 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
+                          </svg>
+                          <span class="truncate">{{ $gateway['network_name'] }}</span>
+                        </span>
+                      </div>
                     </div>
-                    <div class="text-right ml-4">
-                      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $gateway['is_online'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                        {{ $gateway['status'] }}
-                      </span>
-                      <p class="text-xs text-gray-500 mt-1">{{ $gateway['lock_count'] }} locks</p>
+                    <div class="flex-shrink-0 ml-3">
+                      <div class="text-right">
+                        <div class="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-medium">
+                          {{ $gateway['lock_count'] }} {{ $gateway['lock_count'] == 1 ? 'lock' : 'locks' }}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               @endforeach
             </div>
           @else
-            <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-              <p class="text-sm text-yellow-800">
-                <strong>No gateways found.</strong> Please ensure your TTLock gateways are properly configured and connected to your account.
-              </p>
+            <div class="p-6 text-center">
+              <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-yellow-100 mb-3">
+                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+              </div>
+              <p class="text-sm font-medium text-gray-900 mb-1">No gateways found</p>
+              <p class="text-xs text-gray-500">Ensure your TTLock gateways are properly configured and connected.</p>
             </div>
           @endif
         </div>
 
         <!-- Card 2: Lock List -->
-        <div class="bg-white rounded-xl shadow-lg p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">
-              Lock List
-              @if($selectedGateway)
-                <span class="text-sm font-normal text-gray-500">- {{ $selectedGateway['gateway_name'] }}</span>
-              @endif
-            </h3>
-            <div id="lock-count-badge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              {{ count($gatewayLocks) }} locks
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+          <!-- Header -->
+          <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-gray-900">
+                Lock List
+                @if($selectedGateway)
+                  <span class="text-sm font-normal text-gray-500 ml-2">- {{ $selectedGateway['gateway_name'] }}</span>
+                @endif
+              </h3>
+              <div id="lock-count-badge" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                {{ count($gatewayLocks) }} locks
+              </div>
             </div>
           </div>
           
-          <div id="locks-container" class="max-h-96 overflow-y-auto border border-gray-200 rounded-lg bg-white divide-y divide-gray-100">
+          <div id="locks-container" class="max-h-96 overflow-y-auto divide-y divide-gray-100">
             @if($selectedGatewayId && count($gatewayLocks) > 0)
               @foreach($gatewayLocks as $lock)
                 @include('dashboard.partials.lock-item', ['lock' => $lock])
               @endforeach
             @elseif($selectedGatewayId && count($gatewayLocks) == 0)
-              <div class="p-4 text-center text-gray-500">
-                <p>No locks found for this gateway.</p>
+              <div class="p-6 text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mb-3">
+                  <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                  </svg>
+                </div>
+                <p class="text-sm font-medium text-gray-900 mb-1">No locks found</p>
+                <p class="text-xs text-gray-500">This gateway has no locks connected.</p>
               </div>
             @else
-              <div class="p-4 text-center text-gray-500">
-                <p>Select a gateway to view its locks.</p>
+              <div class="p-6 text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+                  <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                  </svg>
+                </div>
+                <p class="text-sm font-medium text-gray-900 mb-1">Select a gateway</p>
+                <p class="text-xs text-gray-500">Click on a gateway to view its locks.</p>
               </div>
             @endif
           </div>
@@ -410,11 +453,11 @@
     document.querySelectorAll('.gateway-item').forEach(item => {
       const itemGatewayId = parseInt(item.getAttribute('data-gateway-id'));
       if (itemGatewayId === gatewayId) {
-        item.classList.add('border-blue-500', 'bg-blue-50');
-        item.classList.remove('border-gray-200', 'bg-white');
+        item.classList.add('bg-blue-50', 'border-l-4', 'border-blue-500');
+        item.classList.remove('hover:bg-gray-50');
       } else {
-        item.classList.remove('border-blue-500', 'bg-blue-50');
-        item.classList.add('border-gray-200');
+        item.classList.remove('bg-blue-50', 'border-l-4', 'border-blue-500');
+        item.classList.add('hover:bg-gray-50');
       }
     });
   }
@@ -425,7 +468,7 @@
   function updateLockListHeader(gatewayName) {
     const lockHeader = document.querySelector('#locks-container').parentElement.querySelector('h3');
     if (lockHeader) {
-      lockHeader.innerHTML = `Lock List <span class="text-sm font-normal text-gray-500">- ${gatewayName}</span>`;
+      lockHeader.innerHTML = `Lock List <span class="text-sm font-normal text-gray-500 ml-2">- ${gatewayName}</span>`;
     }
   }
 
@@ -452,15 +495,38 @@
         const total = data.data.pagination?.total || locks.length;
         
         LockHelpers.updateLockCountBadge(total);
+        locksContainer.className = 'max-h-96 overflow-y-auto divide-y divide-gray-100';
         locksContainer.innerHTML = locks.map(lock => LockHelpers.renderLockItem(lock)).join('');
       } else {
-        locksContainer.innerHTML = LockHelpers.renderEmptyState('No locks found for this gateway.');
+        locksContainer.className = 'max-h-96 overflow-y-auto';
+        locksContainer.innerHTML = `
+          <div class="p-6 text-center">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mb-3">
+              <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+              </svg>
+            </div>
+            <p class="text-sm font-medium text-gray-900 mb-1">No locks found</p>
+            <p class="text-xs text-gray-500">This gateway has no locks connected.</p>
+          </div>
+        `;
         LockHelpers.updateLockCountBadge(0);
       }
     })
     .catch(error => {
       console.error('Error fetching locks:', error);
-      locksContainer.innerHTML = LockHelpers.renderEmptyState('Error loading locks. Please try again.', 'error');
+      locksContainer.className = 'max-h-96 overflow-y-auto';
+      locksContainer.innerHTML = `
+        <div class="p-6 text-center">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-3">
+            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <p class="text-sm font-medium text-gray-900 mb-1">Error loading locks</p>
+          <p class="text-xs text-gray-500">Please try again.</p>
+        </div>
+      `;
       LockHelpers.updateLockCountBadge(0);
     });
   }
