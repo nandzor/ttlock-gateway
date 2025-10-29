@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
-use App\Models\ApiCredential;
+// use App\Models\ApiCredential; // Model not implemented yet
 
 class RequestResponseInterceptor {
     /**
@@ -156,16 +156,16 @@ class RequestResponseInterceptor {
     /**
      * Get API credential from request
      */
-    private function getApiCredential($request): ?ApiCredential {
+    private function getApiCredential($request): ?object {
         $apiKey = $request->header('X-API-Key');
 
         if (!$apiKey) {
             return null;
         }
 
-        return ApiCredential::where('api_key', $apiKey)
-            ->where('status', 'active')
-            ->first();
+        // TODO: Implement ApiCredential model
+        // For now, return null since the model doesn't exist
+        return null;
     }
 
     /**
@@ -179,7 +179,7 @@ class RequestResponseInterceptor {
 
         // Try to get user from API credential
         $apiCredential = $this->getApiCredential($request);
-        if ($apiCredential && $apiCredential->user) {
+        if ($apiCredential && isset($apiCredential->user)) {
             return $apiCredential->user;
         }
 

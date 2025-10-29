@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Services\UserService;
 use App\Models\TTLockCallbackHistory;
+use App\Services\TTLockService;
 
 class DashboardController extends Controller {
     protected $userService;
+    protected $ttlockService;
 
-    public function __construct(UserService $userService) {
+    public function __construct(UserService $userService, TTLockService $ttlockService) {
         $this->userService = $userService;
+        $this->ttlockService = $ttlockService;
     }
 
     /**
@@ -29,6 +32,10 @@ class DashboardController extends Controller {
         $recentEvents = TTLockCallbackHistory::orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
+
+        // TTLock Gateway and Lock Status
+        $gatewayStatus = $this->ttlockService->getGatewayStatus();
+        $lockStatus = $this->ttlockService->getLockOnlineStatus(env('TTLOCK_LOCKID', '17974276'));
 
         // Last 7 days chart data
         $labels = [];
@@ -59,7 +66,9 @@ class DashboardController extends Controller {
             'unprocessedCallbacks',
             'recentCallbacks',
             'recentEvents',
-            'chartLast7Days'
+            'chartLast7Days',
+            'gatewayStatus',
+            'lockStatus'
         ));
     }
 }

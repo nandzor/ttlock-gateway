@@ -298,6 +298,176 @@ class TTLockService extends BaseService
     }
 
     /**
+     * Get gateway status
+     *
+     * @return array
+     */
+    public function getGatewayStatus(): array
+    {
+        try {
+            // Get access token first - if successful, gateway is online
+            $tokenResponse = $this->getAccessToken();
+            if (!$tokenResponse['success']) {
+                // If we can't get access token, gateway is offline
+                return $this->successResponse([
+                    'total_gateways' => 1,
+                    'online_gateways' => 0,
+                    'offline_gateways' => 1,
+                    'status' => 'offline',
+                    'reason' => 'Cannot get access token - gateway appears offline'
+                ], 'Gateway status retrieved successfully');
+            }
+
+            $accessToken = $tokenResponse['data']['access_token'];
+
+            // Try to make a simple API call to test gateway connectivity
+            $testData = [
+                'clientId' => env('TTLOCK_CLIENT_ID'),
+                'accessToken' => $accessToken,
+            ];
+
+            Log::info('TTLock Service: Testing gateway connectivity', [
+                'timestamp' => now(),
+            ]);
+
+            // Use a simple endpoint to test connectivity
+            $response = $this->makeLockApiRequest('/v3/lock/queryStatus', array_merge($testData, [
+                'lockId' => env('TTLOCK_LOCKID', '17974276'),
+                'date' => round(microtime(true) * 1000)
+            ]), 'POST');
+
+            // If we get any response (even error), gateway is online
+            $gatewayOnline = true;
+            $reason = 'Gateway is online - API accessible';
+
+            if (!$response['success']) {
+                // Check if it's a network/connectivity issue
+                if (strpos($response['message'], 'timeout') !== false ||
+                    strpos($response['message'], 'connection') !== false ||
+                    strpos($response['message'], 'network') !== false) {
+                    $gatewayOnline = false;
+                    $reason = 'Gateway appears offline - network connectivity issue';
+                }
+            }
+
+            return $this->successResponse([
+                'total_gateways' => 1,
+                'online_gateways' => $gatewayOnline ? 1 : 0,
+                'offline_gateways' => $gatewayOnline ? 0 : 1,
+                'status' => $gatewayOnline ? 'online' : 'offline',
+                'reason' => $reason,
+                'last_check' => now()->toISOString()
+            ], 'Gateway status retrieved successfully');
+
+        } catch (Exception $e) {
+            Log::error('TTLock Service: Get gateway status failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            // If exception occurs, consider gateway as offline
+            return $this->successResponse([
+                'total_gateways' => 1,
+                'online_gateways' => 0,
+                'offline_gateways' => 1,
+                'status' => 'offline',
+                'reason' => 'Gateway appears offline due to error: ' . $e->getMessage(),
+                'last_check' => now()->toISOString()
+            ], 'Gateway status retrieved successfully');
+        }
+    }
+
+    /**
+     * Get lock online/offline status
+     *
+     * @param string $lockId
+     * @return array
+     */
+    public function getLockOnlineStatus(string $lockId): array
+    {
+        try {
+            // Get access token first
+            $tokenResponse = $this->getAccessToken();
+            if (!$tokenResponse['success']) {
+                return $tokenResponse;
+            }
+
+            $accessToken = $tokenResponse['data']['access_token'];
+
+            // TTLock requires timestamp in milliseconds and must be within ±5 minutes of server time
+            $date = round(microtime(true) * 1000);
+
+            $data = [
+                'clientId' => env('TTLOCK_CLIENT_ID'),
+                'accessToken' => $accessToken,
+                'lockId' => $lockId,
+                'date' => $date,
+            ];
+
+            Log::info('TTLock Service: Getting lock online status', [
+                'lock_id' => $lockId,
+                'timestamp' => now(),
+            ]);
+
+            // Try to get lock status - if successful, lock is online
+            $response = $this->makeLockApiRequest('/v3/lock/queryStatus', $data, 'POST');
+
+            if ($response['success']) {
+                $responseData = $response['data']['raw_response'] ?? [];
+
+                // If we get a response (even with error), the lock is reachable/online
+                $isOnline = true;
+                $status = 'online';
+                $lastSeen = now()->toISOString();
+
+                // Check for specific error codes that might indicate offline status
+                if (isset($responseData['errcode']) && $responseData['errcode'] !== 0) {
+                    $errorCode = $responseData['errcode'];
+
+                    // Some error codes might indicate the lock is offline
+                    if (in_array($errorCode, [-10003, -10004, -10005])) {
+                        $isOnline = false;
+                        $status = 'offline';
+                    }
+                }
+
+                return $this->successResponse([
+                    'lock_id' => $lockId,
+                    'is_online' => $isOnline,
+                    'status' => $status,
+                    'last_seen' => $lastSeen,
+                    'response_data' => $responseData
+                ], 'Lock online status retrieved successfully');
+            } else {
+                // If API call fails, consider lock as offline
+                return $this->successResponse([
+                    'lock_id' => $lockId,
+                    'is_online' => false,
+                    'status' => 'offline',
+                    'last_seen' => null,
+                    'error' => $response['message'] ?? 'API call failed'
+                ], 'Lock appears to be offline');
+            }
+
+        } catch (Exception $e) {
+            Log::error('TTLock Service: Get lock online status failed', [
+                'lock_id' => $lockId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            // If exception occurs, consider lock as offline
+            return $this->successResponse([
+                'lock_id' => $lockId,
+                'is_online' => false,
+                'status' => 'offline',
+                'last_seen' => null,
+                'error' => $e->getMessage()
+            ], 'Lock appears to be offline due to error');
+        }
+    }
+
+    /**
      * Get lock status
      *
      * @param string $lockId
@@ -314,10 +484,14 @@ class TTLockService extends BaseService
 
             $accessToken = $tokenResponse['data']['access_token'];
 
+            // TTLock requires timestamp in milliseconds and must be within ±5 minutes of server time
+            $date = round(microtime(true) * 1000);
+
             $data = [
                 'clientId' => env('TTLOCK_CLIENT_ID'),
                 'accessToken' => $accessToken,
                 'lockId' => $lockId,
+                'date' => $date,
             ];
 
             Log::info('TTLock Service: Getting lock status', [
@@ -325,10 +499,30 @@ class TTLockService extends BaseService
                 'timestamp' => now(),
             ]);
 
-            $response = $this->makeLockApiRequest('/v3/lock/query', $data, 'POST');
+            $response = $this->makeLockApiRequest('/v3/lock/queryStatus', $data, 'POST');
 
             if ($response['success']) {
-                return $this->successResponse($response['data'], 'Lock status retrieved successfully');
+                $responseData = $response['data']['raw_response'] ?? [];
+
+                // Check if TTLock API returned an error
+                if (isset($responseData['errcode']) && $responseData['errcode'] !== 0) {
+                    $errorCode = $responseData['errcode'];
+                    $errorMessage = $responseData['errmsg'] ?? 'Unknown error';
+
+                    // Handle specific error codes
+                    switch ($errorCode) {
+                        case -4043:
+                            return $this->errorResponse('Lock does not support status query function', 400);
+                        case -10001:
+                            return $this->errorResponse('Invalid access token', 401);
+                        case -10002:
+                            return $this->errorResponse('Access token expired', 401);
+                        default:
+                            return $this->errorResponse("TTLock API error: {$errorMessage} (Code: {$errorCode})", 400);
+                    }
+                }
+
+                return $this->successResponse($responseData, 'Lock status retrieved successfully');
             } else {
                 return $response;
             }
@@ -392,14 +586,19 @@ class TTLockService extends BaseService
                         'status' => $response->status(),
                         'error' => $errorData,
                         'attempt' => $attempt,
+                        'url' => $url,
+                        'request_data' => $data,
                     ]);
 
                     // If it's a client error (4xx), don't retry
                     if ($response->status() >= 400 && $response->status() < 500) {
-                        return $this->errorResponse(
-                            'Lock API request failed: ' . ($errorData['errmsg'] ?? $errorData['error_description'] ?? 'Unknown error'),
-                            $response->status()
-                        );
+                        $errorMessage = 'Lock API request failed: ';
+                        if (is_array($errorData)) {
+                            $errorMessage .= $errorData['errmsg'] ?? $errorData['error_description'] ?? $errorData['message'] ?? 'Unknown error';
+                        } else {
+                            $errorMessage .= 'HTTP ' . $response->status() . ' - ' . ($errorData ?: 'Bad Request');
+                        }
+                        return $this->errorResponse($errorMessage, $response->status());
                     }
 
                     // For server errors (5xx), retry if we haven't exceeded max attempts

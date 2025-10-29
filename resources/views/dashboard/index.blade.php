@@ -28,6 +28,29 @@
       </div>
     </div>
 
+    <!-- TTLock Status Indicators -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <!-- Gateway Status -->
+      <x-status-indicator
+        title="Gateway Status"
+        :status="$gatewayStatus['success'] ? $gatewayStatus['data']['status'] : 'offline'"
+        :count="$gatewayStatus['success'] ? $gatewayStatus['data']['online_gateways'] : 0"
+        :total="$gatewayStatus['success'] ? $gatewayStatus['data']['total_gateways'] : 0"
+        icon="wifi"
+        :lastSeen="$gatewayStatus['success'] ? now()->toISOString() : null"
+      />
+
+      <!-- Smart Door Lock Status -->
+      <x-status-indicator
+        title="Smart Door Lock"
+        :status="$lockStatus['success'] ? $lockStatus['data']['status'] : 'offline'"
+        :count="$lockStatus['success'] && $lockStatus['data']['is_online'] ? 1 : 0"
+        :total="1"
+        icon="lock"
+        :lastSeen="$lockStatus['success'] ? $lockStatus['data']['last_seen'] : null"
+      />
+    </div>
+
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <!-- Users -->
