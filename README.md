@@ -80,6 +80,8 @@ TTLOCK_CLIENT_ID=your_client_id
 TTLOCK_CLIENT_SECRET=your_client_secret
 TTLOCK_USERNAME=your_username
 TTLOCK_PASSWORD=your_password
+\n+# Static API Token for protected endpoints (required)
+API_STATIC_TOKEN=your_static_token_here
 ```
 
 ### 6. Run Migrations & Seeders
@@ -135,15 +137,15 @@ routes/
 
 ### TTLock Callbacks
 - `POST /api/v1/ttlock-callback` - Receive lock callbacks
-- `GET /api/v1/ttlock-callback/history` - Get callback history
-- `GET /api/v1/ttlock-callback/statistics` - Get statistics
+- `GET /api/v1/ttlock-callback/history` - Get callback history (Protected by static token)
+- `GET /api/v1/ttlock-callback/statistics` - Get statistics (Protected by static token)
 
 ### TTLock Operations
 - `POST /api/v1/ttlock/oauth/token` - Get OAuth token
 - `POST /api/v1/ttlock/oauth/refresh` - Refresh token
-- `POST /api/v1/ttlock/lock/unlock` - Remote unlock
-- `POST /api/v1/ttlock/lock/lock` - Remote lock
-- `GET /api/v1/ttlock/lock/status` - Get lock status
+- `POST /api/v1/ttlock/lock/unlock` - Remote unlock (Protected by static token)
+- `POST /api/v1/ttlock/lock/lock` - Remote lock (Protected by static token)
+- `GET /api/v1/ttlock/lock/status` - Get lock status (Protected by static token)
 
 ### User Management
 - `GET /api/v1/users` - List users
@@ -175,6 +177,12 @@ The system integrates with TTLock's European API (https://euopen.ttlock.com/) an
 - **Event Types**: Lock operations, passcode, card, fingerprint, battery, tamper alerts
 - **OAuth2**: Secure token management with automatic refresh
 - **Callbacks**: Real-time event processing
+- **Static Token Middleware**: Protected routes require `Authorization: Bearer <API_STATIC_TOKEN>`
+
+### Postman Collection
+- Collection: `postman/TTLock_API_Collection.postman_collection.json`
+- Environments: `postman/TTLock_Local.postman_environment.json`, `postman/TTLock_Staging.postman_environment.json`, `postman/TTLock_Production.postman_environment.json`
+- Set `API_STATIC_TOKEN` in the selected environment; protected requests already include `Authorization: Bearer {{API_STATIC_TOKEN}}`.
 
 ### Supported Lock Events
 - **Lock Operations**: Unlock/Lock via various methods
