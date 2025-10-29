@@ -38,6 +38,9 @@
             @if (request()->has('date_to'))
               <input type="hidden" name="date_to" value="{{ request()->get('date_to') }}">
             @endif
+            @if (request()->has('username'))
+              <input type="hidden" name="username" value="{{ request()->get('username') }}">
+            @endif
             <button type="submit"
               class="px-6 py-2 bg-gray-600 text-white rounded-r-lg hover:bg-gray-700 transition-colors">
               Search
@@ -86,7 +89,7 @@
           <input type="hidden" name="per_page" value="{{ request()->get('per_page') }}">
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <x-select
             name="event_type"
             label="Event Type"
@@ -111,6 +114,13 @@
             :options="['1' => 'Yes', '0' => 'No']"
             selected="{{ request()->get('processed') }}"
             placeholder="All Status" />
+
+          <x-select
+            name="username"
+            label="User"
+            :options="array_combine($usernames ?? [], $usernames ?? [])"
+            selected="{{ request()->get('username') }}"
+            placeholder="All Users" />
 
           <div class="grid grid-cols-2 gap-2">
             <x-input name="date_from" label="From" type="date" value="{{ request('date_from') }}" />

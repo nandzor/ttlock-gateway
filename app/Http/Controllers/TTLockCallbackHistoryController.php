@@ -37,7 +37,16 @@ class TTLockCallbackHistoryController extends Controller
             'unknown' => 'Unknown',
         ];
 
-        return view('ttlock-callback-history.index', compact('histories', 'eventTypes'));
+        // Get unique usernames for filter dropdown
+        $usernames = TTLockCallbackHistory::select('username')
+            ->whereNotNull('username')
+            ->where('username', '!=', '')
+            ->distinct()
+            ->orderBy('username')
+            ->pluck('username')
+            ->toArray();
+
+        return view('ttlock-callback-history.index', compact('histories', 'eventTypes', 'usernames'));
     }
 
     public function export(Request $request, string $format)
