@@ -34,17 +34,20 @@ Route::middleware('api.session|auth:sanctum')->group(function () {
 
 
 Route::post('/ttlock-callback', [TTLockCallbackController::class, 'callback'])->name('v1.ttlock.callback');
-Route::get('/ttlock-callback/history', [TTLockCallbackController::class, 'getHistory'])->name('v1.ttlock.callback.history');
-Route::get('/ttlock-callback/statistics', [TTLockCallbackController::class, 'getStatistics'])->name('v1.ttlock.callback.statistics');
+Route::middleware('static.token')->group(function () {
+    Route::get('/ttlock-callback/history', [TTLockCallbackController::class, 'getHistory'])->name('v1.ttlock.callback.history');
+    Route::get('/ttlock-callback/statistics', [TTLockCallbackController::class, 'getStatistics'])->name('v1.ttlock.callback.statistics');
 
-// TTLock OAuth2 API routes
-Route::prefix('ttlock')->group(function () {
-    Route::post('/oauth/token', [TTLockOAuthController::class, 'getToken'])->name('v1.ttlock.oauth.token');
-    Route::post('/oauth/refresh', [TTLockOAuthController::class, 'refreshToken'])->name('v1.ttlock.oauth.refresh');
-    Route::get('/config/status', [TTLockOAuthController::class, 'getConfigStatus'])->name('v1.ttlock.config.status');
+    // TTLock OAuth2 API routes
+    Route::prefix('ttlock')->group(function () {
+        Route::post('/oauth/token', [TTLockOAuthController::class, 'getToken'])->name('v1.ttlock.oauth.token');
+        Route::post('/oauth/refresh', [TTLockOAuthController::class, 'refreshToken'])->name('v1.ttlock.oauth.refresh');
+        Route::get('/config/status', [TTLockOAuthController::class, 'getConfigStatus'])->name('v1.ttlock.config.status');
 
-    // TTLock Lock operations
-    Route::post('/lock/unlock', [TTLockLockController::class, 'unlock'])->name('v1.ttlock.lock.unlock');
-    Route::post('/lock/lock', [TTLockLockController::class, 'lock'])->name('v1.ttlock.lock.lock');
-    Route::get('/lock/status', [TTLockLockController::class, 'status'])->name('v1.ttlock.lock.status');
+        // TTLock Lock operations (protected by static token)
+        Route::post('/lock/unlock', [TTLockLockController::class, 'unlock'])->name('v1.ttlock.lock.unlock');
+        Route::post('/lock/lock', [TTLockLockController::class, 'lock'])->name('v1.ttlock.lock.lock');
+        Route::get('/lock/status', [TTLockLockController::class, 'status'])->name('v1.ttlock.lock.status');
+
+    });
 });
