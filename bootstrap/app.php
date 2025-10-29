@@ -36,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminOnly::class,
             'api.key' => \App\Http\Middleware\ApiKeyAuth::class,
             'api.version' => \App\Http\Middleware\ApiVersion::class,
+            'web.session' => \App\Http\Middleware\AllowWebSessionAuth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

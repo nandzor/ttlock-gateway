@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\TTLockCallbackController;
 use App\Http\Controllers\Api\V1\TTLockOAuthController;
 use App\Http\Controllers\Api\V1\TTLockLockController;
+use App\Http\Controllers\Api\V1\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,7 +20,7 @@ use App\Http\Controllers\Api\V1\TTLockLockController;
 */
 
 // User management routes - using session-based auth with proper API response
-Route::middleware('api.session|auth:sanctum')->group(function () {
+Route::middleware('web.session')->group(function () {
     Route::apiResource('users', UserController::class)->names([
         'index' => 'v1.users.index',
         'store' => 'v1.users.store',
@@ -29,6 +30,10 @@ Route::middleware('api.session|auth:sanctum')->group(function () {
     ]);
 
     Route::get('/users/pagination/options', [UserController::class, 'paginationOptions'])->name('v1.users.pagination.options');
+    
+    // Dashboard API routes - accessible via web session auth
+    Route::get('/dashboard/gateway/{gatewayId}/locks', [DashboardController::class, 'getLocksByGateway'])->name('v1.dashboard.gateway.locks');
+    Route::get('/dashboard/gateway/status', [DashboardController::class, 'getGatewayStatus'])->name('v1.dashboard.gateway.status');
 });
 
 
@@ -48,6 +53,5 @@ Route::middleware('static.token')->group(function () {
         Route::post('/lock/unlock', [TTLockLockController::class, 'unlock'])->name('v1.ttlock.lock.unlock');
         Route::post('/lock/lock', [TTLockLockController::class, 'lock'])->name('v1.ttlock.lock.lock');
         Route::get('/lock/status', [TTLockLockController::class, 'status'])->name('v1.ttlock.lock.status');
-
     });
 });

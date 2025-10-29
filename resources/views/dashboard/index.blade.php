@@ -28,87 +28,111 @@
       </div>
     </div>
 
-    <!-- TTLock Status Indicators -->
+    <!-- TTLock Gateway and Lock Management -->
     <div class="mb-8">
-      <h2 class="text-xl font-semibold text-gray-900 mb-4">TTLock System Status</h2>
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">TTLock Gateway & Lock Management</h2>
       
-      <!-- Gateway Status -->
-      <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900">Gateway Status</h3>
-          <div class="flex items-center space-x-2">
-            @if($gatewayStatus['success'] && $gatewayStatus['data']['status'] === 'online')
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                <span class="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
-                Online
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Card 1: Gateway Status -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Gateway Status</h3>
+            <div class="flex items-center space-x-2">
+              @php
+                $isOnline = $gatewayStatus['success'] && ($gatewayStatus['data']['status'] ?? 'offline') === 'online';
+              @endphp
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $isOnline ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                <span class="w-2 h-2 {{ $isOnline ? 'bg-green-500' : 'bg-red-500' }} rounded-full mr-1 {{ $isOnline ? 'animate-pulse' : '' }}"></span>
+                {{ $isOnline ? 'Online' : 'Offline' }}
               </span>
-            @else
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                <span class="w-2 h-2 bg-red-500 rounded-full mr-1"></span>
-                Offline
-              </span>
-            @endif
-          </div>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="text-center">
-            <div class="text-2xl font-bold text-gray-900">{{ $gatewayStatus['success'] ? $gatewayStatus['data']['total_gateways'] : 0 }}</div>
-            <div class="text-sm text-gray-500">Total Gateways</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-green-600">{{ $gatewayStatus['success'] ? $gatewayStatus['data']['online_gateways'] : 0 }}</div>
-            <div class="text-sm text-gray-500">Online</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-red-600">{{ $gatewayStatus['success'] ? $gatewayStatus['data']['offline_gateways'] : 0 }}</div>
-            <div class="text-sm text-gray-500">Offline</div>
-          </div>
-        </div>
-        
-        @if($gatewayStatus['success'])
-          <div class="mt-4 p-3 bg-gray-50 rounded-lg">
-            <p class="text-sm text-gray-600">
-              <strong>Status:</strong> {{ $gatewayStatus['data']['reason'] }}
-            </p>
-            <p class="text-xs text-gray-500 mt-1">
-              Last checked: {{ \Carbon\Carbon::parse($gatewayStatus['data']['last_check'])->diffForHumans() }}
-            </p>
+            </div>
           </div>
           
-          @if(isset($gatewayStatus['data']['gateways']) && count($gatewayStatus['data']['gateways']) > 0)
-            <div class="mt-4">
-              <h4 class="text-sm font-medium text-gray-900 mb-2">Gateway Details:</h4>
-              <div class="space-y-2">
-                @foreach($gatewayStatus['data']['gateways'] as $gateway)
-                  <div class="p-3 bg-white rounded-lg border border-gray-200">
-                    <div class="flex items-center justify-between">
-                      <div>
-                        <h5 class="font-medium text-gray-900">{{ $gateway['gateway_name'] }}</h5>
-                        <p class="text-xs text-gray-500">ID: {{ $gateway['gateway_id'] }} | MAC: {{ $gateway['gateway_mac'] }}</p>
-                      </div>
-                      <div class="text-right">
-                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $gateway['is_online'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                          {{ $gateway['status'] }}
-                        </span>
-                        <p class="text-xs text-gray-500 mt-1">{{ $gateway['lock_count'] }} locks</p>
-                      </div>
+          @php
+            $gatewayStats = $gatewayStatus['success'] ? $gatewayStatus['data'] : [];
+            $totalGateways = $gatewayStats['total_gateways'] ?? 0;
+            $onlineGateways = $gatewayStats['online_gateways'] ?? 0;
+            $offlineGateways = $gatewayStats['offline_gateways'] ?? 0;
+          @endphp
+          
+          <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="text-center">
+              <div class="text-2xl font-bold text-gray-900">{{ $totalGateways }}</div>
+              <div class="text-sm text-gray-500">Total</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-green-600">{{ $onlineGateways }}</div>
+              <div class="text-sm text-gray-500">Online</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-red-600">{{ $offlineGateways }}</div>
+              <div class="text-sm text-gray-500">Offline</div>
+            </div>
+          </div>
+          
+          @if($gatewayStatus['success'] && isset($gatewayStatus['data']['gateways']) && count($gatewayStatus['data']['gateways']) > 0)
+            <div class="space-y-2 max-h-96 overflow-y-auto">
+              @foreach($gatewayStatus['data']['gateways'] as $index => $gateway)
+                <div 
+                  class="p-3 rounded-lg border-2 cursor-pointer transition-all gateway-item {{ $selectedGatewayId == $gateway['gateway_id'] ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50' }}"
+                  data-gateway-id="{{ $gateway['gateway_id'] }}"
+                  onclick="selectGateway({{ $gateway['gateway_id'] }}, '{{ addslashes($gateway['gateway_name']) }}')"
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                      <h5 class="font-medium text-gray-900">{{ $gateway['gateway_name'] }}</h5>
+                      <p class="text-xs text-gray-500 mt-1">ID: {{ $gateway['gateway_id'] }} | MAC: {{ $gateway['gateway_mac'] }}</p>
+                      <p class="text-xs text-gray-500">Version: {{ $gateway['gateway_version'] }} | Network: {{ $gateway['network_name'] }}</p>
                     </div>
-                    <div class="mt-2 text-xs text-gray-600">
-                      <p>Version: {{ $gateway['gateway_version'] }} | Network: {{ $gateway['network_name'] }}</p>
+                    <div class="text-right ml-4">
+                      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $gateway['is_online'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                        {{ $gateway['status'] }}
+                      </span>
+                      <p class="text-xs text-gray-500 mt-1">{{ $gateway['lock_count'] }} locks</p>
                     </div>
                   </div>
-                @endforeach
-              </div>
+                </div>
+              @endforeach
             </div>
           @else
-            <div class="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+            <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
               <p class="text-sm text-yellow-800">
                 <strong>No gateways found.</strong> Please ensure your TTLock gateways are properly configured and connected to your account.
               </p>
             </div>
           @endif
-        @endif
+        </div>
+
+        <!-- Card 2: Lock List -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">
+              Lock List
+              @if($selectedGateway)
+                <span class="text-sm font-normal text-gray-500">- {{ $selectedGateway['gateway_name'] }}</span>
+              @endif
+            </h3>
+            <div id="lock-count-badge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              {{ count($gatewayLocks) }} locks
+            </div>
+          </div>
+          
+          <div id="locks-container" class="space-y-2 max-h-96 overflow-y-auto">
+            @if($selectedGatewayId && count($gatewayLocks) > 0)
+              @foreach($gatewayLocks as $lock)
+                @include('dashboard.partials.lock-item', ['lock' => $lock])
+              @endforeach
+            @elseif($selectedGatewayId && count($gatewayLocks) == 0)
+              <div class="p-4 text-center text-gray-500">
+                <p>No locks found for this gateway.</p>
+              </div>
+            @else
+              <div class="p-4 text-center text-gray-500">
+                <p>Select a gateway to view its locks.</p>
+              </div>
+            @endif
+          </div>
+        </div>
       </div>
     </div>
 
@@ -121,7 +145,7 @@
       <x-stat-card title="Unprocessed" :value="$unprocessedCallbacks" color="yellow" />
     </div>
 
-    <div class="mt-6">
+    <div class="mt-6 mb-8">
       <x-card title="TTLock Callbacks - Last 7 Days">
         <div class="w-full">
           <canvas id="ttlockLast7Chart" height="350"></canvas>
@@ -173,24 +197,9 @@
         </div>
       </x-card>
 
-      <x-card title="Today Overview">
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <div class="text-sm text-gray-500">Callbacks (24h)</div>
-            <div class="text-2xl font-bold">{{ $recentCallbacks }}</div>
-          </div>
-          <div>
-            <div class="text-sm text-gray-500">Processed</div>
-            <div class="text-2xl font-bold text-green-600">{{ $processedCallbacks }}</div>
-          </div>
-          <div>
-            <div class="text-sm text-gray-500">Unprocessed</div>
-            <div class="text-2xl font-bold text-yellow-600">{{ $unprocessedCallbacks }}</div>
-          </div>
-          <div>
-            <div class="text-sm text-gray-500">Total</div>
-            <div class="text-2xl font-bold text-indigo-600">{{ $totalCallbacks }}</div>
-          </div>
+      <x-card title="Today Overview - Callbacks by Username">
+        <div class="w-full">
+          <canvas id="usernamePieChart" height="250"></canvas>
         </div>
       </x-card>
     </div>
@@ -225,6 +234,237 @@
       }
     });
   })();
+
+  // Username Pie Chart
+  (function() {
+    const ctx = document.getElementById('usernamePieChart');
+    if (!ctx) return;
+
+    const data = {
+      labels: @json($chartUsernamePie['labels'] ?? []),
+      datasets: @json($chartUsernamePie['datasets'] ?? [])
+    };
+
+    // Check if there's actual data (not just "No Data")
+    const hasData = data.labels.length > 0 && 
+                    data.labels[0] !== 'No Data' && 
+                    data.datasets[0].data.reduce((a, b) => a + b, 0) > 0;
+
+    const chart = new Chart(ctx, {
+      type: 'pie',
+      data,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: hasData,
+            position: 'right',
+            labels: {
+              padding: 15,
+              usePointStyle: true,
+              font: {
+                size: 11
+              }
+            }
+          },
+          tooltip: {
+            enabled: hasData,
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.parsed || 0;
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                if (total === 0) return label;
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `${label}: ${value} (${percentage}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Show message if no data
+    if (!hasData) {
+      const noDataText = ctx.parentElement;
+      if (noDataText) {
+        noDataText.innerHTML = '<div class="p-8 text-center text-gray-500"><p>No username data available</p></div>';
+      }
+    }
+  })();
+
+  // Gateway and Lock Management - Helper Functions
+  const LockHelpers = {
+    /**
+     * Calculate RSSI status and color
+     * @param {number|null} rssi - RSSI value in dBm
+     * @returns {Object} {status: string, color: string}
+     */
+    calculateRssiStatus(rssi) {
+      if (rssi === null || rssi === undefined) {
+        return { status: 'unknown', color: 'gray' };
+      }
+      
+      if (rssi > -75) {
+        return { status: 'strong', color: 'green' };
+      } else if (rssi >= -85 && rssi <= -75) {
+        return { status: 'medium', color: 'yellow' };
+      } else {
+        return { status: 'weak', color: 'red' };
+      }
+    },
+
+    /**
+     * Format update date to relative time
+     * @param {number} timestamp - Timestamp in milliseconds
+     * @returns {string} Formatted time string
+     */
+    formatUpdateDate(timestamp) {
+      if (!timestamp) return '';
+      
+      const updateDate = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now - updateDate;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      
+      if (diffMins < 1) return 'just now';
+      if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+      if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    },
+
+    /**
+     * Render lock item HTML
+     * @param {Object} lock - Lock data object
+     * @returns {string} HTML string
+     */
+    renderLockItem(lock) {
+      const hasAlias = lock.lockAlias && lock.lockAlias !== lock.lockName;
+      const rssiData = this.calculateRssiStatus(lock.rssi);
+      const updateDateStr = this.formatUpdateDate(lock.updateDate);
+      
+      return `
+        <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              ${hasAlias ? `
+                <h5 class="font-medium text-gray-900">${lock.lockAlias}</h5>
+                <p class="text-xs text-gray-500 italic">${lock.lockName || 'Unknown Lock'}</p>
+              ` : `
+                <h5 class="font-medium text-gray-900">${lock.lockName || 'Unknown Lock'}</h5>
+              `}
+              <p class="text-xs text-gray-500 mt-1">
+                ID: ${lock.lockId || 'Unknown'} | MAC: ${lock.lockMac || 'Unknown'}
+              </p>
+              ${lock.rssi !== null && lock.rssi !== undefined ? `
+                <p class="text-xs text-gray-500 mt-1">
+                  Signal: <span class="font-medium text-${rssiData.color}-600">${lock.rssi} dBm</span> 
+                  <span class="text-${rssiData.color}-600">(${rssiData.status.charAt(0).toUpperCase() + rssiData.status.slice(1)})</span>
+                </p>
+              ` : ''}
+              ${updateDateStr ? `<p class="text-xs text-gray-500 mt-1">Last update: ${updateDateStr}</p>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    },
+
+    /**
+     * Update lock count badge
+     * @param {number} count - Number of locks
+     */
+    updateLockCountBadge(count) {
+      const badge = document.getElementById('lock-count-badge');
+      if (badge) {
+        badge.textContent = `${count} locks`;
+      }
+    },
+
+    /**
+     * Render empty state message
+     * @param {string} message - Message to display
+     * @param {string} type - Type: 'empty' or 'error'
+     * @returns {string} HTML string
+     */
+    renderEmptyState(message, type = 'empty') {
+      const colorClass = type === 'error' ? 'text-red-500' : 'text-gray-500';
+      return `<div class="p-4 text-center ${colorClass}"><p>${message}</p></div>`;
+    }
+  };
+
+  /**
+   * Update active gateway visual state
+   */
+  function updateActiveGateway(gatewayId) {
+    document.querySelectorAll('.gateway-item').forEach(item => {
+      const itemGatewayId = parseInt(item.getAttribute('data-gateway-id'));
+      if (itemGatewayId === gatewayId) {
+        item.classList.add('border-blue-500', 'bg-blue-50');
+        item.classList.remove('border-gray-200', 'bg-white');
+      } else {
+        item.classList.remove('border-blue-500', 'bg-blue-50');
+        item.classList.add('border-gray-200');
+      }
+    });
+  }
+
+  /**
+   * Update lock list header with gateway name
+   */
+  function updateLockListHeader(gatewayName) {
+    const lockHeader = document.querySelector('#locks-container').parentElement.querySelector('h3');
+    if (lockHeader) {
+      lockHeader.innerHTML = `Lock List <span class="text-sm font-normal text-gray-500">- ${gatewayName}</span>`;
+    }
+  }
+
+  /**
+   * Fetch and render locks for selected gateway
+   */
+  function fetchAndRenderLocks(gatewayId) {
+    const locksContainer = document.getElementById('locks-container');
+    locksContainer.innerHTML = LockHelpers.renderEmptyState('Loading locks...');
+
+    fetch(`/api/v1/dashboard/gateway/${gatewayId}/locks`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      },
+      credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success && data.data?.locks?.length > 0) {
+        const locks = data.data.locks;
+        const total = data.data.pagination?.total || locks.length;
+        
+        LockHelpers.updateLockCountBadge(total);
+        locksContainer.innerHTML = locks.map(lock => LockHelpers.renderLockItem(lock)).join('');
+      } else {
+        locksContainer.innerHTML = LockHelpers.renderEmptyState('No locks found for this gateway.');
+        LockHelpers.updateLockCountBadge(0);
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching locks:', error);
+      locksContainer.innerHTML = LockHelpers.renderEmptyState('Error loading locks. Please try again.', 'error');
+      LockHelpers.updateLockCountBadge(0);
+    });
+  }
+
+  /**
+   * Select gateway and update UI
+   */
+  function selectGateway(gatewayId, gatewayName) {
+    updateActiveGateway(gatewayId);
+    updateLockListHeader(gatewayName);
+    fetchAndRenderLocks(gatewayId);
+  }
 </script>
 @endpush
 

@@ -376,11 +376,11 @@ class TTLockService extends BaseService
     }
 
     /**
-     * Get locks by gateway using TTLock API /v3/lock/list with gatewayId parameter
+     * Get locks by gateway using TTLock API /v3/gateway/listLock
      *
      * @param int $gatewayId Gateway ID
-     * @param int $pageNo Page number (default: 1)
-     * @param int $pageSize Items per page (default: 20, max: 200)
+     * @param int $pageNo Page number (not used, kept for compatibility)
+     * @param int $pageSize Page size (not used, kept for compatibility)
      * @return array
      */
     public function getLocksByGateway(int $gatewayId, int $pageNo = 1, int $pageSize = 20): array
@@ -394,27 +394,22 @@ class TTLockService extends BaseService
             $accessToken = $tokenResponse['data']['access_token'];
             $date = round(microtime(true) * 1000);
 
-            // Validate parameters
-            $pageNo = max(1, $pageNo);
-            $pageSize = min(200, max(1, $pageSize));
-
+            // Use the correct endpoint /v3/gateway/listLock
+            // This endpoint doesn't use pagination - it returns all locks related to the gateway
             $data = [
                 'clientId' => env('TTLOCK_CLIENT_ID'),
                 'accessToken' => $accessToken,
                 'gatewayId' => $gatewayId,
-                'pageNo' => $pageNo,
-                'pageSize' => $pageSize,
                 'date' => $date,
             ];
 
             Log::info('TTLock Service: Getting locks by gateway', [
                 'gateway_id' => $gatewayId,
-                'page_no' => $pageNo,
-                'page_size' => $pageSize,
+                'endpoint' => '/v3/gateway/listLock',
                 'timestamp' => now(),
             ]);
 
-            $response = $this->makeLockApiRequest('/v3/lock/list', $data, 'GET');
+            $response = $this->makeLockApiRequest('/v3/gateway/listLock', $data, 'GET');
 
             if ($response['success']) {
                 $responseData = $response['data']['raw_response'] ?? [];
@@ -425,7 +420,9 @@ class TTLockService extends BaseService
                     return $this->errorResponse("TTLock Gateway ListLock API error: {$errorMessage} (Code: {$errorCode})", 400);
                 }
                 
-                return $this->successResponse($responseData, 'Locks by gateway retrieved successfully');
+                return $this->successResponse([
+                    'raw_response' => $responseData,
+                ], 'Locks by gateway retrieved successfully');
             } else {
                 return $response;
             }
@@ -433,8 +430,6 @@ class TTLockService extends BaseService
         } catch (Exception $e) {
             Log::error('TTLock Service: Get locks by gateway failed', [
                 'gateway_id' => $gatewayId,
-                'page_no' => $pageNo,
-                'page_size' => $pageSize,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
