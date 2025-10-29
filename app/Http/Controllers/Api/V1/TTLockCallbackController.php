@@ -60,6 +60,7 @@ class TTLockCallbackController extends BaseController
     ];
     /**
      * Handle TTLock callback requests
+     * Supports both single and batch sync modes
      *
      * @param Request $request
      * @return JsonResponse
@@ -69,6 +70,12 @@ class TTLockCallbackController extends BaseController
         try {
             $this->logCallbackReceived($request);
 
+            // Check if this is a batch sync (multiple events from gateway)
+            if ($this->isBatchSync($request)) {
+                return $this->handleBatchSync($request);
+            }
+
+            // Process single callback normally
             $callbackHistory = $this->historyService->processCallback($request);
 
             $this->logCallbackProcessed($callbackHistory, $callbackHistory->event_type, [
@@ -79,6 +86,7 @@ class TTLockCallbackController extends BaseController
                 'callback_id' => $callbackHistory->id,
                 'event_type' => $callbackHistory->event_type,
                 'message' => $callbackHistory->message,
+                'mode' => 'online'
             ], 'Callback processed and saved successfully');
 
         } catch (\Exception $e) {
@@ -86,6 +94,118 @@ class TTLockCallbackController extends BaseController
             return $this->serverErrorResponse('Failed to process callback');
         }
     }
+
+    /**
+     * Check if this is a batch sync from gateway
+     * Gateway may send multiple events in single callback when internet returns
+     *
+     * @param Request $request
+     * @return bool
+     */
+    private function isBatchSync(Request $request): bool
+    {
+        // Check if request has batch sync indicators
+        $records = $request->input('records');
+
+        // If records is array with multiple items, it's batch sync
+        if (is_array($records) && count($records) > 1) {
+            return true;
+        }
+
+        // Check for batch sync header or parameter
+        if ($request->has('batch_sync') || $request->header('X-Batch-Sync')) {
+            return true;
+        }
+
+        // Check if this is a rapid sequence of individual callbacks
+        // (This would be handled by rate limiting and queuing in production)
+        return false;
+    }
+
+    /**
+     * Handle batch sync from gateway
+     * Process multiple events that were stored during offline period
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    private function handleBatchSync(Request $request): JsonResponse
+    {
+        try {
+            $records = $request->input('records', []);
+            $processedCount = 0;
+            $successCount = 0;
+            $failedCount = 0;
+            $errors = [];
+
+            Log::info('TTLock Batch Sync Started', [
+                'lock_id' => $request->input('lockId'),
+                'records_count' => count($records),
+                'timestamp' => now(),
+            ]);
+
+            // Process each record in the batch
+            foreach ($records as $index => $record) {
+                try {
+                    // Create individual request for each record
+                    $individualRequest = clone $request;
+                    $individualRequest->merge([
+                        'records' => [$record], // Single record
+                        'batch_index' => $index,
+                        'batch_total' => count($records)
+                    ]);
+
+                    // Process the individual callback
+                    $callbackHistory = $this->historyService->processCallback($individualRequest);
+                    $successCount++;
+
+                    Log::info('TTLock Batch Sync Record Processed', [
+                        'batch_index' => $index,
+                        'callback_id' => $callbackHistory->id,
+                        'event_type' => $callbackHistory->event_type,
+                    ]);
+
+                } catch (\Exception $e) {
+                    $failedCount++;
+                    $errors[] = [
+                        'index' => $index,
+                        'error' => $e->getMessage()
+                    ];
+
+                    Log::error('TTLock Batch Sync Record Failed', [
+                        'batch_index' => $index,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+
+                $processedCount++;
+            }
+
+            Log::info('TTLock Batch Sync Completed', [
+                'processed' => $processedCount,
+                'successful' => $successCount,
+                'failed' => $failedCount,
+            ]);
+
+            return $this->successResponse([
+                'batch_sync' => true,
+                'processed' => $processedCount,
+                'successful' => $successCount,
+                'failed' => $failedCount,
+                'errors' => $errors,
+                'mode' => 'batch_sync'
+            ], "Batch sync completed: {$successCount} successful, {$failedCount} failed");
+
+        } catch (\Exception $e) {
+            Log::error('TTLock Batch Sync Error', [
+                'error' => $e->getMessage(),
+                'request_data' => $request->all(),
+            ]);
+
+            return $this->serverErrorResponse('Failed to process batch sync');
+        }
+    }
+
 
     /**
      * Log incoming callback for debugging
