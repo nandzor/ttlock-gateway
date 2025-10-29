@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\TTLockCallbackHistoryController;
 use Illuminate\Support\Facades\Route;
 
 // Guest routes
@@ -29,6 +30,10 @@ Route::middleware('auth')->group(function () {
 
     // User CRUD
     Route::resource('users', UserController::class);
+
+    // TTLock Callback Histories
+    Route::get('/ttlock-callback-histories', [TTLockCallbackHistoryController::class, 'index'])->name('ttlock.callback.histories.index');
+    Route::get('/ttlock-callback-histories/export/{format}', [TTLockCallbackHistoryController::class, 'export'])->name('ttlock.callback.histories.export');
 
 
     // Removed routes for modules that are no longer present

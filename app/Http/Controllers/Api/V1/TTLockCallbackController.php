@@ -3,190 +3,318 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+use App\Models\TTLockCallbackHistory;
+use App\Services\TTLockCallbackHistoryService;
 
 /**
  * TTLock Callback Controller
  *
  * Handles callbacks from TTLock platform (https://euopen.ttlock.com/)
  * Processes various lock-related events and operations
+ *
+ * @package App\Http\Controllers\Api\V1
  */
 class TTLockCallbackController extends BaseController
 {
+    public function __construct(private TTLockCallbackHistoryService $historyService)
+    {
+    }
+    /**
+     * Default pagination per page
+     */
+    private const DEFAULT_PER_PAGE = 20;
+
+    /**
+     * Recent callbacks hours threshold
+     */
+    private const RECENT_HOURS = 24;
+
+    /**
+     * Event type mappings
+     */
+    private const EVENT_TYPE_MESSAGES = [
+        'lock_operation' => 'Lock operation received',
+        'passcode_operation' => 'Passcode operation received',
+        'card_operation' => 'Card operation received',
+        'fingerprint_operation' => 'Fingerprint operation received',
+        'remote_unlock' => 'Remote unlock operation received',
+        'gateway_offline' => 'Gateway is offline',
+        'gateway_online' => 'Gateway is online',
+        'battery_low' => 'Lock battery is low',
+        'tamper_alarm' => 'Lock tamper alarm triggered',
+        'security_alert' => 'Security alert triggered',
+        'unknown' => 'Unknown callback type',
+    ];
+
+    /**
+     * Special vendor code messages
+     */
+    private const VENDOR_CODE_MESSAGES = [
+        20 => 'Unlocked via fingerprint',
+        29 => 'Unexpected unlock detected',
+        44 => 'Tamper alert triggered',
+        45 => 'Auto lock activated',
+        48 => 'Invalid passcode used multiple times',
+    ];
     /**
      * Handle TTLock callback requests
      *
      * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function callback(Request $request)
+    public function callback(Request $request): JsonResponse
     {
         try {
-            // Log incoming callback for debugging
-            Log::info('TTLock Callback Received', [
-                'data' => $request->all(),
-                'headers' => $request->headers->all(),
-                'timestamp' => now(),
+            $this->logCallbackReceived($request);
+
+            $callbackHistory = $this->historyService->processCallback($request);
+
+            $this->logCallbackProcessed($callbackHistory, $callbackHistory->event_type, [
+                'recordType' => $callbackHistory->record_type,
             ]);
 
-            // // Validate required fields based on TTLock API documentation
-            // $validator = Validator::make($request->all(), [
-            //     'lockId' => 'required|string',
-            //     'type' => 'required|integer',
-            //     'timestamp' => 'required|integer',
-            //     'lockmac' => 'required|string',
-            //     'data' => 'required|string',
-            // ]);
-
-            // if ($validator->fails()) {
-            //     Log::warning('TTLock Callback Validation Failed', [
-            //         'errors' => $validator->errors(),
-            //         'request_data' => $request->all(),
-            //     ]);
-
-            //     return $this->validationErrorResponse(
-            //         $validator->errors(),
-            //         'Invalid callback data'
-            //     );
-            // }
-
-            // // Extract callback data
-            // $lockId = $request->input('lockId');
-            // $type = $request->input('type');
-            // $timestamp = $request->input('timestamp');
-            // $lockMac = $request->input('lockmac');
-            // $data = $request->input('data');
-
-            // // Process different callback types
-            // $result = $this->processCallback($lockId, $type, $timestamp, $lockMac, $data);
-
-            // Log::info('TTLock Callback Processed Successfully', [
-            //     'lockId' => $lockId,
-            //     'type' => $type,
-            //     'result' => $result,
-            // ]);
-
-            return $this->successResponse($request->all(), 'Callback processed successfully');
+            return $this->successResponse([
+                'callback_id' => $callbackHistory->id,
+                'event_type' => $callbackHistory->event_type,
+                'message' => $callbackHistory->message,
+            ], 'Callback processed and saved successfully');
 
         } catch (\Exception $e) {
-            Log::error('TTLock Callback Processing Error', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all(),
-            ]);
-
+            $this->logCallbackError($e, $request);
             return $this->serverErrorResponse('Failed to process callback');
         }
     }
 
     /**
-     * Process different types of callbacks
+     * Log incoming callback for debugging
      *
-     * @param string $lockId
-     * @param int $type
-     * @param int $timestamp
-     * @param string $lockMac
-     * @param string $data
-     * @return array
+     * @param Request $request
+     * @return void
      */
-    private function processCallback(string $lockId, int $type, int $timestamp, string $lockMac, string $data): array
+    private function logCallbackReceived(Request $request): void
     {
-        $processedData = [
-            'lock_id' => $lockId,
-            'type' => $type,
-            'timestamp' => $timestamp,
-            'lock_mac' => $lockMac,
-            'processed_at' => now()->toISOString(),
-        ];
-
-        // Process based on callback type
-        switch ($type) {
-            case 1: // Lock operation (unlock/lock)
-                $processedData['event'] = 'lock_operation';
-                $processedData['raw_data'] = json_decode($data, true);
-                $processedData['message'] = 'Lock operation received';
-                break;
-
-            case 2: // Passcode operation
-                $processedData['event'] = 'passcode_operation';
-                $processedData['raw_data'] = json_decode($data, true);
-                $processedData['message'] = 'Passcode operation received';
-                break;
-
-            case 3: // Card operation
-                $processedData['event'] = 'card_operation';
-                $processedData['raw_data'] = json_decode($data, true);
-                $processedData['message'] = 'Card operation received';
-                break;
-
-            case 4: // Fingerprint operation
-                $processedData['event'] = 'fingerprint_operation';
-                $processedData['raw_data'] = json_decode($data, true);
-                $processedData['message'] = 'Fingerprint operation received';
-                break;
-
-            case 5: // Remote unlock
-                $processedData['event'] = 'remote_unlock';
-                $processedData['raw_data'] = json_decode($data, true);
-                $processedData['message'] = 'Remote unlock operation received';
-                break;
-
-            case 6: // Gateway offline
-                $processedData['event'] = 'gateway_offline';
-                $processedData['message'] = 'Gateway is offline';
-                break;
-
-            case 7: // Gateway online
-                $processedData['event'] = 'gateway_online';
-                $processedData['message'] = 'Gateway is online';
-                break;
-
-            case 8: // Lock battery low
-                $processedData['event'] = 'battery_low';
-                $processedData['message'] = 'Lock battery is low';
-                break;
-
-            case 9: // Lock tamper alarm
-                $processedData['event'] = 'tamper_alarm';
-                $processedData['message'] = 'Lock tamper alarm triggered';
-                break;
-
-            default:
-                $processedData['event'] = 'unknown';
-                $processedData['raw_data'] = json_decode($data, true);
-                $processedData['message'] = 'Unknown callback type';
-                break;
-        }
-
-        // Here you can add your business logic:
-        // - Update database records
-        // - Send notifications
-        // - Trigger other processes
-        // - etc.
-
-        return $processedData;
+        Log::info('TTLock Callback Received', [
+            'data' => $request->all(),
+            'headers' => $request->headers->all(),
+            'timestamp' => now(),
+        ]);
     }
 
     /**
-     * Get supported callback types
+     * Extract callback data from request
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request
+     * @return array
      */
-    public function getCallbackTypes()
+    private function extractCallbackData(Request $request): array
     {
-        $callbackTypes = [
-            1 => 'Lock Operation (Unlock/Lock)',
-            2 => 'Passcode Operation',
-            3 => 'Card Operation',
-            4 => 'Fingerprint Operation',
-            5 => 'Remote Unlock',
-            6 => 'Gateway Offline',
-            7 => 'Gateway Online',
-            8 => 'Lock Battery Low',
-            9 => 'Lock Tamper Alarm',
+        return [
+            'lockId' => $request->input('lockId'),
+            'lockMac' => $request->input('lockMac'),
+            'admin' => $request->input('admin'),
+            'notifyType' => $request->input('notifyType'),
+            'records' => $this->parseRecords($request->input('records')),
+            'requestId' => $request->input('request_id'),
         ];
-
-        return $this->successResponse($callbackTypes, 'Supported callback types retrieved successfully');
     }
+
+    /**
+     * Parse records from JSON string or array
+     *
+     * @param mixed $records
+     * @return array|null
+     */
+    private function parseRecords($records): ?array
+    {
+        if (!$records) {
+            return null;
+        }
+
+        return is_string($records) ? json_decode($records, true) : $records;
+    }
+
+    /**
+     * Extract first record from parsed records
+     *
+     * @param array|null $records
+     * @return array
+     */
+    private function extractFirstRecord(?array $records): array
+    {
+        if (!$records || !is_array($records) || empty($records)) {
+            return [];
+        }
+
+        return $records[0];
+    }
+
+    /**
+     * Create callback history record
+     *
+     * @param array $callbackData
+     * @param array $firstRecord
+     * @param string $eventType
+     * @param string $message
+     * @param Request $request
+     * @return TTLockCallbackHistory
+     */
+    private function createCallbackHistory(array $callbackData, array $firstRecord, string $eventType, string $message, Request $request): TTLockCallbackHistory
+    {
+        return TTLockCallbackHistory::create([
+            'lock_id' => $callbackData['lockId'],
+            'lock_mac' => $callbackData['lockMac'],
+            'admin' => $callbackData['admin'],
+            'notify_type' => $callbackData['notifyType'],
+            'records' => $callbackData['records'],
+            'record_type_from_lock' => $firstRecord['recordTypeFromLock'] ?? null,
+            'record_type' => $firstRecord['recordType'] ?? null,
+            'success' => $firstRecord['success'] ?? null,
+            'username' => $firstRecord['username'] ?? null,
+            'keyboard_pwd' => $firstRecord['keyboardPwd'] ?? null,
+            'lock_date' => $firstRecord['lockDate'] ?? null,
+            'server_date' => $firstRecord['serverDate'] ?? null,
+            'electric_quantity' => $firstRecord['electricQuantity'] ?? null,
+            'event_type' => $eventType,
+            'message' => $message,
+            'raw_data' => $request->all(),
+            'request_id' => $callbackData['requestId'],
+            'processed' => true,
+            'processed_at' => now(),
+        ]);
+    }
+
+    /**
+     * Log callback processed successfully
+     *
+     * @param TTLockCallbackHistory $callbackHistory
+     * @param string $eventType
+     * @param array $firstRecord
+     * @return void
+     */
+    private function logCallbackProcessed(TTLockCallbackHistory $callbackHistory, string $eventType, array $firstRecord): void
+    {
+        Log::info('TTLock Callback Processed and Saved', [
+            'callback_id' => $callbackHistory->id,
+            'lock_id' => $callbackHistory->lock_id,
+            'event_type' => $eventType,
+            'record_type' => $firstRecord['recordType'] ?? null,
+        ]);
+    }
+
+    /**
+     * Log callback processing error
+     *
+     * @param \Exception $e
+     * @param Request $request
+     * @return void
+     */
+    private function logCallbackError(\Exception $e, Request $request): void
+    {
+        Log::error('TTLock Callback Processing Error', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'request_data' => $request->all(),
+        ]);
+    }
+
+
+    /**
+     * Determine event type based on record type and recordTypeFromLock
+     * Based on TTLock API v3 documentation: https://euopen.ttlock.com/doc/api/v3/lockRecord/list
+     *
+     * @param int|null $recordType
+     * @param int|null $recordTypeFromLock
+     * @return string
+     */
+    // moved to service
+
+    /**
+     * Get event type mapping for recordTypeFromLock (vendor-specific codes)
+     */
+    // moved to service
+
+    /**
+     * Get event type mapping for standard recordType codes
+     */
+    // moved to service
+
+    /**
+     * Build human readable message for event type
+     * Based on TTLock API v3 documentation: https://euopen.ttlock.com/doc/api/v3/lockRecord/list
+     *
+     * @param string $eventType
+     * @param array $record
+     * @return string
+     */
+    // moved to service
+
+    /**
+     * Get callback history with pagination
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getHistory(Request $request): JsonResponse
+    {
+        try {
+            $history = $this->historyService->historyForApi($request);
+
+            return $this->successResponse($history, 'Callback history retrieved successfully');
+
+        } catch (\Exception $e) {
+            Log::error('TTLock Callback History Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->serverErrorResponse('Failed to retrieve callback history');
+        }
+    }
+
+    /**
+     * Get callback statistics
+     *
+     * @return JsonResponse
+     */
+    public function getStatistics(): JsonResponse
+    {
+        try {
+            $stats = $this->historyService->statistics();
+
+            return $this->successResponse($stats, 'Callback statistics retrieved successfully');
+
+        } catch (\Exception $e) {
+            Log::error('TTLock Callback Statistics Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->serverErrorResponse('Failed to retrieve callback statistics');
+        }
+    }
+
+    /**
+     * Extract history filters from request
+     *
+     * @param Request $request
+     * @return array
+     */
+    // moved to service
+
+    /**
+     * Build history query with filters
+     *
+     * @param array $filters
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    // moved to service
+
+    /**
+     * Build statistics data
+     *
+     * @return array
+     */
+    // moved to service
 }

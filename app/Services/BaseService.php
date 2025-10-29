@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\Request;
 
 abstract class BaseService
 {
@@ -93,9 +94,12 @@ abstract class BaseService
             return $query;
         }
 
-        return $query->where(function ($q) use ($search) {
+        $driver = $this->model->getConnection()->getDriverName();
+        $likeOperator = $driver === 'pgsql' ? 'ILIKE' : 'LIKE';
+
+        return $query->where(function ($q) use ($search, $likeOperator) {
             foreach ($this->searchableFields as $field) {
-                $q->orWhere($field, 'like', "%{$search}%");
+                $q->orWhere($field, $likeOperator, "%{$search}%");
             }
         });
     }
@@ -111,6 +115,20 @@ abstract class BaseService
     {
         foreach ($filters as $field => $value) {
             if (!is_null($value) && $value !== '') {
+                // Special handling for common filter types
+                if ($field === 'date_from') {
+                    $query->where('created_at', '>=', $value);
+                    continue;
+                }
+                if ($field === 'date_to') {
+                    $query->where('created_at', '<=', $value);
+                    continue;
+                }
+                if ($field === 'processed') {
+                    $query->where('processed', (bool) $value);
+                    continue;
+                }
+
                 if (is_array($value)) {
                     $query->whereIn($field, $value);
                 } else {
@@ -120,6 +138,74 @@ abstract class BaseService
         }
 
         return $query;
+    }
+
+    /**
+     * Build filters array from request based on allowed keys
+     *
+     * @param Request $request
+     * @param array $allowedKeys
+     * @return array
+     */
+    protected function buildFiltersFromRequest(Request $request, array $allowedKeys): array
+    {
+        $filters = [];
+
+        foreach ($allowedKeys as $key) {
+            if ($request->filled($key)) {
+                $filters[$key] = $request->input($key);
+            }
+        }
+
+        return $filters;
+    }
+
+    /**
+     * Apply ordering to query with safe defaults
+     *
+     * @param Builder $query
+     * @param string|null $orderBy
+     * @param string|null $direction
+     * @return Builder
+     */
+    protected function applyOrdering(Builder $query, ?string $orderBy = null, ?string $direction = null): Builder
+    {
+        $column = $orderBy ?: $this->orderByColumn;
+        $dir = strtolower($direction ?: $this->orderByDirection);
+        if (!in_array($dir, ['asc', 'desc'], true)) {
+            $dir = $this->orderByDirection;
+        }
+        return $query->orderBy($column, $dir);
+    }
+
+    /**
+     * Paginate using common request params (search, per_page, filters, ordering)
+     *
+     * @param Request $request
+     * @param array $filterKeys
+     * @return LengthAwarePaginator
+     */
+    public function paginateFromRequest(Request $request, array $filterKeys = []): LengthAwarePaginator
+    {
+        $perPage = $this->validatePerPage((int) $request->input('per_page', 10));
+        $search = $request->input('search');
+        $filters = $this->buildFiltersFromRequest($request, $filterKeys);
+        $orderBy = $request->input('order_by');
+        $direction = $request->input('order_dir');
+
+        $query = $this->getBaseQuery();
+
+        if (!empty($filters)) {
+            $query = $this->applyFilters($query, $filters);
+        }
+
+        if (!empty($search)) {
+            $query = $this->applySearch($query, $search);
+        }
+
+        $query = $this->applyOrdering($query, $orderBy, $direction);
+
+        return $query->paginate($perPage)->withQueryString();
     }
 
     /**

@@ -34,6 +34,8 @@ Route::middleware('api.session|auth:sanctum')->group(function () {
 
 
 Route::post('/ttlock-callback', [TTLockCallbackController::class, 'callback'])->name('v1.ttlock.callback');
+Route::get('/ttlock-callback/history', [TTLockCallbackController::class, 'getHistory'])->name('v1.ttlock.callback.history');
+Route::get('/ttlock-callback/statistics', [TTLockCallbackController::class, 'getStatistics'])->name('v1.ttlock.callback.statistics');
 
 // TTLock OAuth2 API routes
 Route::prefix('ttlock')->group(function () {

@@ -1,7 +1,7 @@
 @props([
   'title',
   'value',
-  'icon',
+  'icon' => null,
   'color' => 'blue',
   'trend' => null,
   'trendUp' => true
@@ -27,6 +27,9 @@ $iconBg = [
   'indigo' => 'bg-indigo-100',
   'yellow' => 'bg-yellow-100',
 ];
+
+$defaultIcon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 18a6 6 0 100-12 6 6 0 000 12z" />';
+$iconToRender = $icon ?? $defaultIcon;
 @endphp
 
 <div class="relative overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
@@ -40,7 +43,7 @@ $iconBg = [
       <div class="flex-shrink-0">
         <div class="p-3 {{ $iconBg[$color] }} rounded-xl">
           <svg class="w-6 h-6 text-{{ $color }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {!! $icon !!}
+            {!! $iconToRender !!}
           </svg>
         </div>
       </div>

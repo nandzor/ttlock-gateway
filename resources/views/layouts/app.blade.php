@@ -76,6 +76,13 @@
           <x-sidebar-icon name="users" />
           Users
         </x-sidebar-link>
+
+        <!-- TTLock -->
+        <x-sidebar-section title="TTLock" />
+        <x-sidebar-link :href="route('ttlock.callback.histories.index')" :active="request()->routeIs('ttlock.callback.histories.*')">
+          <x-sidebar-icon name="history" />
+          Callback Histories
+        </x-sidebar-link>
       </nav>
 
       <div class="absolute bottom-0 w-64 px-4 py-4 border-t border-gray-800">
