@@ -30,44 +30,44 @@ class TTLockCallbackController extends BaseController
                 'timestamp' => now(),
             ]);
 
-            // Validate required fields based on TTLock API documentation
-            $validator = Validator::make($request->all(), [
-                'lockId' => 'required|string',
-                'type' => 'required|integer',
-                'timestamp' => 'required|integer',
-                'lockmac' => 'required|string',
-                'data' => 'required|string',
-            ]);
+            // // Validate required fields based on TTLock API documentation
+            // $validator = Validator::make($request->all(), [
+            //     'lockId' => 'required|string',
+            //     'type' => 'required|integer',
+            //     'timestamp' => 'required|integer',
+            //     'lockmac' => 'required|string',
+            //     'data' => 'required|string',
+            // ]);
 
-            if ($validator->fails()) {
-                Log::warning('TTLock Callback Validation Failed', [
-                    'errors' => $validator->errors(),
-                    'request_data' => $request->all(),
-                ]);
+            // if ($validator->fails()) {
+            //     Log::warning('TTLock Callback Validation Failed', [
+            //         'errors' => $validator->errors(),
+            //         'request_data' => $request->all(),
+            //     ]);
 
-                return $this->validationErrorResponse(
-                    $validator->errors(),
-                    'Invalid callback data'
-                );
-            }
+            //     return $this->validationErrorResponse(
+            //         $validator->errors(),
+            //         'Invalid callback data'
+            //     );
+            // }
 
-            // Extract callback data
-            $lockId = $request->input('lockId');
-            $type = $request->input('type');
-            $timestamp = $request->input('timestamp');
-            $lockMac = $request->input('lockmac');
-            $data = $request->input('data');
+            // // Extract callback data
+            // $lockId = $request->input('lockId');
+            // $type = $request->input('type');
+            // $timestamp = $request->input('timestamp');
+            // $lockMac = $request->input('lockmac');
+            // $data = $request->input('data');
 
-            // Process different callback types
-            $result = $this->processCallback($lockId, $type, $timestamp, $lockMac, $data);
+            // // Process different callback types
+            // $result = $this->processCallback($lockId, $type, $timestamp, $lockMac, $data);
 
-            Log::info('TTLock Callback Processed Successfully', [
-                'lockId' => $lockId,
-                'type' => $type,
-                'result' => $result,
-            ]);
+            // Log::info('TTLock Callback Processed Successfully', [
+            //     'lockId' => $lockId,
+            //     'type' => $type,
+            //     'result' => $result,
+            // ]);
 
-            return $this->successResponse($result, 'Callback processed successfully');
+            return $this->successResponse($request->all(), 'Callback processed successfully');
 
         } catch (\Exception $e) {
             Log::error('TTLock Callback Processing Error', [

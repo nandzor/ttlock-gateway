@@ -14,9 +14,6 @@ class DatabaseSeeder extends Seeder {
         // Seed only the retained modules
         $this->call([
             UserSeeder::class,
-            HpsEmasSeeder::class,
-            HpsElektronikSeeder::class,
-            FaqChatbotQnaSeeder::class,
         ]);
 
         $this->command->info('Database seeded successfully!');

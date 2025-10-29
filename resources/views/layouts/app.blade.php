@@ -66,26 +66,7 @@
           Dashboard
         </x-sidebar-link>
 
-        <!-- HPS Management Section -->
-        <x-sidebar-section title="HPS Management" />
 
-        <!-- HPS Emas -->
-        <x-sidebar-link :href="route('hps-emas.index')" :active="request()->routeIs('hps-emas.*')">
-          <x-sidebar-icon name="gold" />
-          HPS Emas
-        </x-sidebar-link>
-
-        <!-- HPS Elektronik -->
-        <x-sidebar-link :href="route('hps-elektronik.index')" :active="request()->routeIs('hps-elektronik.*')">
-          <x-sidebar-icon name="electronics" />
-          HPS Elektronik
-        </x-sidebar-link>
-
-        <!-- FAQ Chatbot -->
-        <x-sidebar-link :href="route('faq-chatbot-qna.index')" :active="request()->routeIs('faq-chatbot-qna.*')">
-          <x-sidebar-icon name="faq" />
-          FAQ Chatbot
-        </x-sidebar-link>
 
         <!-- User Management Section -->
         <x-sidebar-section title="User Management" />

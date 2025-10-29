@@ -2,9 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\UserController;
-use App\Http\Controllers\Api\V1\HpsEmasController;
-use App\Http\Controllers\Api\V1\HpsElektronikController;
 use App\Http\Controllers\Api\V1\TTLockCallbackController;
+use App\Http\Controllers\Api\V1\TTLockOAuthController;
+use App\Http\Controllers\Api\V1\TTLockLockController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,12 +31,18 @@ Route::middleware('api.session|auth:sanctum')->group(function () {
     Route::get('/users/pagination/options', [UserController::class, 'paginationOptions'])->name('v1.users.pagination.options');
 });
 
-// HPS Elektronik price checking API (requires static token via x-token header)
-Route::middleware('static.token')->post('/hps-elektronik/check-price', [HpsElektronikController::class, 'checkPrice'])->name('v1.hps-elektronik.check-price');
-
-// HPS Emas price checking API (requires static token via x-token header)
-Route::middleware('static.token')->post('/hps-emas/check-price', [HpsEmasController::class, 'checkPrice'])->name('v1.hps-emas.check-price');
 
 
-// HPS Emas price checking API (requires static token via x-token header)
 Route::post('/ttlock-callback', [TTLockCallbackController::class, 'callback'])->name('v1.ttlock.callback');
+
+// TTLock OAuth2 API routes
+Route::prefix('ttlock')->group(function () {
+    Route::post('/oauth/token', [TTLockOAuthController::class, 'getToken'])->name('v1.ttlock.oauth.token');
+    Route::post('/oauth/refresh', [TTLockOAuthController::class, 'refreshToken'])->name('v1.ttlock.oauth.refresh');
+    Route::get('/config/status', [TTLockOAuthController::class, 'getConfigStatus'])->name('v1.ttlock.config.status');
+
+    // TTLock Lock operations
+    Route::post('/lock/unlock', [TTLockLockController::class, 'unlock'])->name('v1.ttlock.lock.unlock');
+    Route::post('/lock/lock', [TTLockLockController::class, 'lock'])->name('v1.ttlock.lock.lock');
+    Route::get('/lock/status', [TTLockLockController::class, 'status'])->name('v1.ttlock.lock.status');
+});
