@@ -19,6 +19,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     unzip \
+    curl \
     libzip-dev \
     libpng-dev \
     libjpeg-dev \
@@ -29,6 +30,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libicu-dev \
     libmagickwand-dev \
     libsodium-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js dan npm
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
@@ -44,26 +50,23 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy Caddyfile terlebih dahulu
 COPY docker/frankenphp/Caddyfile /etc/caddy/Caddyfile
 
+# Copy startup script
+COPY docker/frankenphp/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
 # Copy seluruh kode aplikasi
 COPY . .
 
 # Install Composer dependencies untuk production
-RUN composer install --no-interaction --optimize-autoloader --no-dev
+RUN composer install --no-interaction --optimize-autoloader
 
-# Create necessary directories and set permissions
-RUN mkdir -p /var/log/caddy \
-    && chmod 755 /app \
-    && chmod 755 /var/log/caddy
+# Install Node.js dependencies dan build assets Vite
+RUN npm ci && npm run build && rm -rf node_modules
 
-# Konfigurasi FrankenPHP untuk web + queue processing
-ENV FRANKENPHP_CONFIG="worker:16 scheduler:2"
-ENV QUEUE_CONNECTION=redis
-ENV REDIS_HOST=redis
-ENV REDIS_PORT=6379
+# Create storage directories and set permissions
+RUN mkdir -p storage/app/private storage/framework/{cache,sessions,views} storage/logs \
+    && chmod -R 775 storage bootstrap/cache
 
-# Expose port 80
-EXPOSE 80 443
-
-# Start FrankenPHP
-CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
+# Start FrankenPHP dan Horizon menggunakan startup script
+CMD ["/usr/local/bin/start.sh"]
 

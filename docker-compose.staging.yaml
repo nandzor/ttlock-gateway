@@ -1,0 +1,11 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/frankenphp/Dockerfile
+    image: ttlock/dashboard:staging
+    container_name: ttlock_dashboard_staging
+    network_mode: host
+    env_file:
+      - .env
+    restart: always

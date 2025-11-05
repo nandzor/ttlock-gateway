@@ -6,7 +6,7 @@
     }
 }
 
-:80 {
+:9004 {
     root * /app/public
     encode gzip
 

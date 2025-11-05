@@ -31,7 +31,7 @@
     <!-- TTLock Gateway and Lock Management -->
     <div class="mb-8">
       <h2 class="text-xl font-semibold text-gray-900 mb-4">TTLock Gateway & Lock Management</h2>
-      
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Card 1: Gateway Status -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -70,12 +70,12 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Gateway List -->
           @if($gatewayStatus['success'] && isset($gatewayStatus['data']['gateways']) && count($gatewayStatus['data']['gateways']) > 0)
             <div class="divide-y divide-gray-100 max-h-96 overflow-y-auto">
               @foreach($gatewayStatus['data']['gateways'] as $index => $gateway)
-                <div 
+                <div
                   class="px-4 py-3 cursor-pointer transition-all gateway-item {{ $selectedGatewayId == $gateway['gateway_id'] ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50' }}"
                   data-gateway-id="{{ $gateway['gateway_id'] }}"
                   onclick="selectGateway({{ $gateway['gateway_id'] }}, '{{ addslashes($gateway['gateway_name']) }}')"
@@ -90,7 +90,7 @@
                           {{ $gateway['status'] }}
                         </span>
                       </div>
-                      
+
                       <!-- Baris 2: Details -->
                       <div class="flex items-center gap-2 text-xs text-gray-500">
                         <span class="font-mono text-gray-600">{{ $gateway['gateway_id'] }}</span>
@@ -147,7 +147,7 @@
               </div>
             </div>
           </div>
-          
+
           <div id="locks-container" class="max-h-96 overflow-y-auto divide-y divide-gray-100">
             @if($selectedGatewayId && count($gatewayLocks) > 0)
               @foreach($gatewayLocks as $lock)
@@ -240,7 +240,7 @@
         </div>
       </x-card>
 
-      <x-card title="Today Overview - Callbacks by Username">
+      <x-card title="Overview - Callbacks by Username">
         <div class="w-full">
           <canvas id="usernamePieChart" height="250"></canvas>
         </div>
@@ -289,8 +289,8 @@
     };
 
     // Check if there's actual data (not just "No Data")
-    const hasData = data.labels.length > 0 && 
-                    data.labels[0] !== 'No Data' && 
+    const hasData = data.labels.length > 0 &&
+                    data.labels[0] !== 'No Data' &&
                     data.datasets[0].data.reduce((a, b) => a + b, 0) > 0;
 
     const chart = new Chart(ctx, {
@@ -348,7 +348,7 @@
       if (rssi === null || rssi === undefined) {
         return { status: 'unknown', color: 'gray' };
       }
-      
+
       if (rssi > -75) {
         return { status: 'strong', color: 'green' };
       } else if (rssi >= -85 && rssi <= -75) {
@@ -365,14 +365,14 @@
      */
     formatUpdateDate(timestamp) {
       if (!timestamp) return '';
-      
+
       const updateDate = new Date(timestamp);
       const now = new Date();
       const diffMs = now - updateDate;
       const diffMins = Math.floor(diffMs / 60000);
       const diffHours = Math.floor(diffMs / 3600000);
       const diffDays = Math.floor(diffMs / 86400000);
-      
+
       if (diffMins < 1) return 'just now';
       if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
       if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
@@ -388,15 +388,15 @@
       const hasAlias = lock.lockAlias && lock.lockAlias !== lock.lockName;
       const rssiData = this.calculateRssiStatus(lock.rssi);
       const updateDateStr = this.formatUpdateDate(lock.updateDate);
-      
-      const signalHtml = lock.rssi !== null && lock.rssi !== undefined 
+
+      const signalHtml = lock.rssi !== null && lock.rssi !== undefined
         ? `<span class="text-gray-300">•</span><span class="font-medium text-${rssiData.color}-600">${lock.rssi} dBm</span>`
         : '';
-      
-      const updateHtml = updateDateStr 
+
+      const updateHtml = updateDateStr
         ? `<span class="text-gray-300">•</span><span class="text-gray-400">${updateDateStr}</span>`
         : '';
-      
+
       return `
         <div class="px-3 py-2 bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors last:border-b-0">
           <div class="flex items-center justify-between gap-3">
@@ -409,7 +409,7 @@
                   <h5 class="font-semibold text-sm text-gray-900 truncate">${lock.lockName || 'Unknown Lock'}</h5>
                 `}
               </div>
-              
+
               <div class="flex items-center gap-2 text-xs text-gray-500">
                 <span class="font-mono text-gray-600">${lock.lockId || 'Unknown'}</span>
                 <span class="text-gray-300">•</span>
@@ -493,7 +493,7 @@
       if (data.success && data.data?.locks?.length > 0) {
         const locks = data.data.locks;
         const total = data.data.pagination?.total || locks.length;
-        
+
         LockHelpers.updateLockCountBadge(total);
         locksContainer.className = 'max-h-96 overflow-y-auto divide-y divide-gray-100';
         locksContainer.innerHTML = locks.map(lock => LockHelpers.renderLockItem(lock)).join('');
